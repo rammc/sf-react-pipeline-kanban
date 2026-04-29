@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "graphql:codegen": "graphql-codegen",
-    "graphql:schema": "node scripts/get-graphql-schema.mjs"
+    "graphql:schema": "node scripts/get-graphql-schema.mjs",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -64,6 +65,7 @@
     "graphql": "^16.11.0",
     "graphql-codegen-typescript-operation-types": "^2.0.2",
     "jsdom": "^25.0.1",
+    "patch-package": "^8.0.1",
     "serve": "^14.2.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

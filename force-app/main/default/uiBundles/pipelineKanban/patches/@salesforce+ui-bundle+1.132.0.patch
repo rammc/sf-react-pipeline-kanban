@@ -1,0 +1,42 @@
+diff --git a/node_modules/@salesforce/ui-bundle/dist/proxy/handler.js b/node_modules/@salesforce/ui-bundle/dist/proxy/handler.js
+index bcf5be3..f514351 100644
+--- a/node_modules/@salesforce/ui-bundle/dist/proxy/handler.js
++++ b/node_modules/@salesforce/ui-bundle/dist/proxy/handler.js
+@@ -230,7 +230,10 @@ class UIBundleProxyHandler {
+         return;
+       }
+       const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+-      let targetUrl = `${this.orgInfo.instanceUrl}${apiPath}${url.search}`;
++      // PATCH: use rawInstanceUrl (*.my.salesforce.com), not instanceUrl
++      // (*.lightning.force.com). Sandboxes return empty bodies for
++      // /services/data/* on the lightning domain.
++      let targetUrl = `${this.orgInfo.rawInstanceUrl ?? this.orgInfo.instanceUrl}${apiPath}${url.search}`;
+       if (this.options?.debug) {
+         console.log(`[ui-bundle-proxy] Forwarding to Salesforce: ${targetUrl}`);
+       }
+@@ -239,9 +242,10 @@ class UIBundleProxyHandler {
+         method: req.method,
+         headers: {
+           ...getFilteredHeaders(req.headers),
+-          Cookie: `sid=${this.orgInfo.accessToken}`,
++          // PATCH: dropped `Cookie: sid=...` — sfdcedge rejected the
++          // OAuth access token when supplied as a session cookie on
++          // sandboxes (HTTP 400 INVALID_ACCESS_TOKEN). Bearer-only works.
+           Accept: req.headers.accept ?? "application/json",
+-          // necessary for Apex requests, for which SessionUtil.validateSessionUsage won't accept OAuth token as `sid` cookie
+           Authorization: `Bearer ${this.orgInfo.accessToken}`
+         },
+         body
+diff --git a/node_modules/@salesforce/ui-bundle/dist/proxy/routing.js b/node_modules/@salesforce/ui-bundle/dist/proxy/routing.js
+index 6559555..67df725 100644
+--- a/node_modules/@salesforce/ui-bundle/dist/proxy/routing.js
++++ b/node_modules/@salesforce/ui-bundle/dist/proxy/routing.js
+@@ -7,7 +7,7 @@ function normalizeRoute(route) {
+   });
+ }
+ function matchRoute(pathname, basePath, rewrites, redirects) {
+-  const base = basePath || "";
++  const base = (!basePath || basePath === "/") ? "" : basePath;
+   const services = [
+     "graphql",
+     "ui-api",
