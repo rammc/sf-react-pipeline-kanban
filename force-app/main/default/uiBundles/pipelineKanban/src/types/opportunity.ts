@@ -26,6 +26,4 @@ export interface Opportunity {
 export interface Stage {
   value: string;
   label: string;
-  /** Forecast probability 0..1 — used by the weighted-pipeline calculation in Phase 5. */
-  probability: number;
 }

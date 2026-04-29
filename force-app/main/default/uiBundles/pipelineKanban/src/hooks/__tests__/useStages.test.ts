@@ -12,7 +12,7 @@ describe('useStages', () => {
     vi.resetAllMocks();
   });
 
-  it('flattens objectInfos → fields → picklistValuesByRecordTypeIDs and applies default probabilities', async () => {
+  it('flattens objectInfos → fields → picklistValuesByRecordTypeIDs into a minimal Stage list', async () => {
     vi.mocked(client.executeGraphQL).mockResolvedValueOnce({
       uiapi: {
         objectInfos: [
@@ -48,10 +48,12 @@ describe('useStages', () => {
       { recordTypeIDs: ['012000000000000AAA'] }
     );
     expect(result.current.error).toBeNull();
+    // Probability and category live in @/lib/stageMeta — useStages is
+    // only responsible for shaping the picklist response.
     expect(result.current.stages).toEqual([
-      { value: 'Prospecting', label: 'Prospecting', probability: 0.1 },
-      { value: 'Closed Won', label: 'Closed Won', probability: 1.0 },
-      { value: 'Custom Stage', label: 'Custom Stage', probability: 0 },
+      { value: 'Prospecting', label: 'Prospecting' },
+      { value: 'Closed Won', label: 'Closed Won' },
+      { value: 'Custom Stage', label: 'Custom Stage' },
     ]);
   });
 

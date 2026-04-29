@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -16,7 +16,8 @@ import { useStages } from '@/hooks/useStages';
 import { useUpdateStage } from '@/hooks/useUpdateStage';
 import { useUpdateAmount } from '@/hooks/useUpdateAmount';
 import { useFilterStore } from '@/store/filterStore';
-import type { Opportunity } from '@/types/opportunity';
+import { stageMeta } from '@/lib/stageMeta';
+import type { Opportunity, Stage } from '@/types/opportunity';
 import { BoardSkeleton } from './BoardSkeleton';
 import { EmptyState } from './EmptyState';
 import { FilterBar } from './FilterBar';
@@ -32,6 +33,24 @@ function groupByStage(opps: Opportunity[]): Map<string, Opportunity[]> {
     else grouped.set(o.StageName, [o]);
   }
   return grouped;
+}
+
+/**
+ * Index of the first stage where category transitions from 'open' to
+ * 'closed' in the rendered order. -1 when no transition exists
+ * (all-open orgs, all-closed orgs, or orgs whose closed stages happen
+ * to come before any open stage).
+ */
+function findOpenClosedBoundary(stages: Stage[]): number {
+  for (let i = 1; i < stages.length; i++) {
+    if (
+      stageMeta(stages[i].value).category === 'closed' &&
+      stageMeta(stages[i - 1].value).category === 'open'
+    ) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 export function KanbanBoard() {
@@ -61,6 +80,7 @@ export function KanbanBoard() {
   }, [localOpps, ownerIds, closeDateFrom, closeDateTo]);
 
   const grouped = useMemo(() => groupByStage(visibleOpps), [visibleOpps]);
+  const boundaryIndex = useMemo(() => findOpenClosedBoundary(stages), [stages]);
   const draggingCard = activeId
     ? localOpps.find(o => o.Id === activeId) ?? null
     : null;
@@ -154,14 +174,21 @@ export function KanbanBoard() {
           className="flex min-h-0 flex-1 gap-4 overflow-x-auto px-6 py-4"
           aria-label="Pipeline board"
         >
-          {stages.map(stage => (
-            <KanbanColumn
-              key={stage.value}
-              stage={stage}
-              opportunities={grouped.get(stage.value) ?? []}
-              draggingId={activeId}
-              onUpdateAmount={handleUpdateAmount}
-            />
+          {stages.map((stage, i) => (
+            <Fragment key={stage.value}>
+              {i === boundaryIndex && (
+                <div
+                  aria-hidden
+                  className="w-px self-stretch bg-card-edge"
+                />
+              )}
+              <KanbanColumn
+                stage={stage}
+                opportunities={grouped.get(stage.value) ?? []}
+                draggingId={activeId}
+                onUpdateAmount={handleUpdateAmount}
+              />
+            </Fragment>
           ))}
         </main>
       </div>

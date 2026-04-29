@@ -4,7 +4,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { stageAccent } from '@/lib/stageColors';
+import { stageMeta } from '@/lib/stageMeta';
 import type { Opportunity, Stage } from '@/types/opportunity';
 import { formatCurrency } from '@/utils/format';
 
@@ -24,28 +24,29 @@ export interface ForecastBarProps {
  * are an explicit click.
  */
 export function ForecastBar({ opportunities, stages }: ForecastBarProps) {
-  const stageIndex = useMemo(
-    () => new Map(stages.map(s => [s.value, s])),
-    [stages]
-  );
-
   const summary = useMemo(() => {
     let totalAmount = 0;
     let weightedTotal = 0;
     const perStage = new Map<
       string,
-      { stage: Stage; count: number; sum: number; weighted: number }
+      { stage: Stage; probability: number; count: number; sum: number; weighted: number }
     >();
 
     for (const stage of stages) {
-      perStage.set(stage.value, { stage, count: 0, sum: 0, weighted: 0 });
+      perStage.set(stage.value, {
+        stage,
+        probability: stageMeta(stage.value).probability,
+        count: 0,
+        sum: 0,
+        weighted: 0,
+      });
     }
 
     for (const opp of opportunities) {
-      const stage = stageIndex.get(opp.StageName);
       const amount = opp.Amount ?? 0;
+      const probability = stageMeta(opp.StageName).probability;
+      const weighted = (amount * probability) / 100;
       totalAmount += amount;
-      const weighted = amount * (stage?.probability ?? 0);
       weightedTotal += weighted;
       const row = perStage.get(opp.StageName);
       if (row) {
@@ -60,7 +61,7 @@ export function ForecastBar({ opportunities, stages }: ForecastBarProps) {
       weightedTotal,
       perStage: Array.from(perStage.values()),
     };
-  }, [opportunities, stages, stageIndex]);
+  }, [opportunities, stages]);
 
   return (
     <div
@@ -96,12 +97,12 @@ export function ForecastBar({ opportunities, stages }: ForecastBarProps) {
                   <td className="py-1 pr-2">
                     <span
                       className="mr-2 inline-block h-2 w-2 rounded-[1px]"
-                      style={{ background: stageAccent(row.stage.value) }}
+                      style={{ background: stageMeta(row.stage.value).accent }}
                       aria-hidden
                     />
                     {row.stage.label}
                     <span className="ml-1 font-mono text-ink-muted">
-                      {Math.round(row.stage.probability * 100)}%
+                      {row.probability}%
                     </span>
                   </td>
                   <td className="py-1 text-right font-mono text-ink-muted">

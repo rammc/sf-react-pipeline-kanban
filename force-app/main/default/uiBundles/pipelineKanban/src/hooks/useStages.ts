@@ -31,30 +31,6 @@ interface StagesVariables {
   recordTypeIDs: string[];
 }
 
-/**
- * Forecast probabilities for the standard Sales Cloud stages.
- * Salesforce's GraphQL API does not expose forecast probability per
- * picklist value, so the mapping is hard-coded. Orgs with custom
- * stages have entries default to 0 — add them here, or replace with
- * an Apex callout that reads OpportunityStage metadata.
- */
-const DEFAULT_PROBABILITIES: Record<string, number> = {
-  Prospecting: 0.1,
-  Qualification: 0.1,
-  Discovery: 0.2,
-  'Needs Analysis': 0.2,
-  'Value Proposition': 0.5,
-  'Id. Decision Makers': 0.6,
-  'Perception Analysis': 0.7,
-  'Proposal/Price Quote': 0.75,
-  'Proposal/Quote': 0.75,
-  Quotation: 0.75,
-  'Negotiation/Review': 0.9,
-  Negotiation: 0.9,
-  'Closed Won': 1.0,
-  'Closed Lost': 0.0,
-};
-
 export interface UseStagesResult {
   stages: Stage[];
   loading: boolean;
@@ -86,11 +62,7 @@ export function useStages(): UseStagesResult {
         const values = masterEntry?.picklistValues ?? [];
 
         setStages(
-          values.map(v => ({
-            value: v.value,
-            label: v.label,
-            probability: DEFAULT_PROBABILITIES[v.value] ?? 0,
-          }))
+          values.map(v => ({ value: v.value, label: v.label }))
         );
       } catch (err) {
         if (cancelled) return;

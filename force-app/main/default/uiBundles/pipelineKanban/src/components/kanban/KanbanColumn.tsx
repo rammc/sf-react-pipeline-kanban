@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core';
-import { stageAccent } from '@/lib/stageColors';
+import { stageMeta } from '@/lib/stageMeta';
 import type { Opportunity, Stage } from '@/types/opportunity';
 import { formatCurrency } from '@/utils/format';
 import { DraggableOpportunityCard } from './DraggableOpportunityCard';
@@ -30,8 +30,9 @@ export function KanbanColumn({
     0
   );
 
-  const accent = stageAccent(stage.value);
-  const probabilityPct = Math.round(stage.probability * 100);
+  const meta = stageMeta(stage.value);
+  const accent = meta.accent;
+  const probabilityPct = meta.probability;
 
   return (
     <section

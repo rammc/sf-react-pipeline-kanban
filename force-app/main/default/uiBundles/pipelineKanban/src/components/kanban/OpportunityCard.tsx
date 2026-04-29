@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { stageAccent } from '@/lib/stageColors';
+import { startOfDay } from 'date-fns';
+import { stageMeta, type StageCategory } from '@/lib/stageMeta';
 import type { Opportunity } from '@/types/opportunity';
 import { formatCloseDate, formatCurrency, initials } from '@/utils/format';
 import { InlineEditAmount } from './InlineEditAmount';
@@ -10,6 +11,29 @@ export interface OpportunityCardProps {
   onUpdateAmount?: (id: string, next: number) => Promise<void>;
   /** Render the dark-bordered, shadowed variant used inside DragOverlay. */
   overlay?: boolean;
+}
+
+const APPROACHING_WINDOW_DAYS = 14;
+const ARCHIVED_DATE = '#8a8780';
+const PAST_DUE = '#a85d3e'; // same as Negotiation accent — intentional
+const APPROACHING = '#1a1a1a';
+const FUTURE = '#7a7770';
+
+/**
+ * Three-tier date colour for open-stage cards; closed-stage cards
+ * always render in the muted archived tone (a Closed-Lost deal can
+ * have a past CloseDate but should not alarm anyone).
+ */
+export function dateColor(closeDate: Date, category: StageCategory): string {
+  if (category === 'closed') return ARCHIVED_DATE;
+
+  const today = startOfDay(new Date()).getTime();
+  const target = startOfDay(closeDate).getTime();
+  const daysUntil = Math.ceil((target - today) / 86_400_000);
+
+  if (daysUntil < 0) return PAST_DUE;
+  if (daysUntil <= APPROACHING_WINDOW_DAYS) return APPROACHING;
+  return FUTURE;
 }
 
 export function OpportunityCard({
@@ -34,27 +58,36 @@ export function OpportunityCard({
     }
   }
 
-  const accent = stageAccent(StageName);
+  const meta = stageMeta(StageName);
+  const isArchived = meta.category === 'closed';
+
+  // Tonal split — closed stages render with reduced weight so the
+  // active workspace dominates. Single conditional avoids scatter.
+  const surfaceClass = isArchived ? 'bg-[#f3f1e9]' : 'bg-surface-card';
+  const textClass = isArchived ? 'text-[#3a3a3a]' : 'text-ink';
+  const ownerToneClass = isArchived ? 'text-[#8a8780]' : 'text-ink-muted';
+
   const borderClasses = overlay
     ? 'border-ink shadow-md'
     : 'border-card-edge hover:border-card-edge-hover';
 
+  const dateTone = dateColor(new Date(CloseDate), meta.category);
+
   return (
     <article
-      className={`relative rounded-[4px] border bg-surface-card transition-colors ${borderClasses}`}
-      style={{ borderLeft: `2px solid ${accent}` }}
+      className={`relative rounded-[4px] border transition-colors ${surfaceClass} ${borderClasses}`}
+      style={{ borderLeft: `2px solid ${meta.accent}` }}
     >
       {/* Avatar — absolute top-right, neutral outline, no fill */}
       <span
         title={Owner.Name}
         aria-label={`Owner ${Owner.Name}`}
-        className="pointer-events-none absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border border-[#d8d4c8] bg-transparent font-mono text-[10px] text-ink"
+        className={`pointer-events-none absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border border-[#d8d4c8] bg-transparent font-mono text-[10px] ${textClass}`}
       >
         {initials(Owner.Name) || '?'}
       </span>
 
       <div className="px-[14px] py-[12px]">
-        {/* Amount — top-left, dominant. Click to edit. */}
         {editing && onUpdateAmount ? (
           <InlineEditAmount
             initialAmount={Amount}
@@ -67,23 +100,23 @@ export function OpportunityCard({
             onPointerDown={e => e.stopPropagation()}
             onClick={() => onUpdateAmount && setEditing(true)}
             disabled={!onUpdateAmount}
-            className="block text-left font-mono text-[16px] font-medium text-ink hover:underline disabled:cursor-default disabled:no-underline"
+            className={`block text-left font-mono text-[16px] font-medium hover:underline disabled:cursor-default disabled:no-underline ${textClass}`}
             title={onUpdateAmount ? 'Click to edit amount' : undefined}
           >
             {formatCurrency(Amount)}
           </button>
         )}
 
-        {/* Account name */}
-        <p className="mt-[2px] text-[14px] font-medium text-ink leading-tight pr-8">
+        <p className={`mt-[2px] text-[14px] font-medium leading-tight pr-8 ${textClass}`}>
           {Name}
         </p>
 
-        {/* Footer — date · owner */}
-        <p className="mt-[6px] text-[11px] text-ink-muted">
-          <span className="font-mono">{formatCloseDate(CloseDate)}</span>
-          <span className="mx-1.5">·</span>
-          <span>{Owner.Name}</span>
+        <p className="mt-[6px] text-[11px]">
+          <span className="font-mono" style={{ color: dateTone }}>
+            {formatCloseDate(CloseDate)}
+          </span>
+          <span className={`mx-1.5 ${ownerToneClass}`}>·</span>
+          <span className={ownerToneClass}>{Owner.Name}</span>
         </p>
       </div>
     </article>

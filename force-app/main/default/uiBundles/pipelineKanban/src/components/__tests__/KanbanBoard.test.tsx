@@ -18,11 +18,11 @@ vi.mock('@/hooks/useUpdateAmount', () => ({
 
 import { useOpportunities } from '@/hooks/useOpportunities';
 import { useStages } from '@/hooks/useStages';
+import { makeStage } from '@/test-utils/factories';
 
-const stages: Stage[] = [
-  { value: 'Prospecting', label: 'Prospecting', probability: 0.1 },
-  { value: 'Closed Won', label: 'Closed Won', probability: 1.0 },
-];
+// Real stage names so the production stageMeta() lookup applies
+// (Prospecting → 10%, Closed Won → 100%).
+const stages: Stage[] = [makeStage('Prospecting'), makeStage('Closed Won')];
 
 const opps: Opportunity[] = [
   {
