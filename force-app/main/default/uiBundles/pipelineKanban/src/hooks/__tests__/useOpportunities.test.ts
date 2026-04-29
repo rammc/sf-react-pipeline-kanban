@@ -26,6 +26,7 @@ describe('useOpportunities', () => {
                   CloseDate: { value: '2026-06-30' },
                   StageName: { value: 'Negotiation/Review' },
                   Owner: {
+                    Id: '005xx000001',
                     Name: { value: 'Marc Benioff' },
                     SmallPhotoUrl: { value: 'https://example.com/avatar.png' },
                   },
@@ -50,6 +51,7 @@ describe('useOpportunities', () => {
       CloseDate: '2026-06-30',
       StageName: 'Negotiation/Review',
       Owner: {
+        Id: '005xx000001',
         Name: 'Marc Benioff',
         SmallPhotoUrl: 'https://example.com/avatar.png',
       },

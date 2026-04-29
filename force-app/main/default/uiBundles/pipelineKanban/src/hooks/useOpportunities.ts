@@ -15,6 +15,7 @@ interface RawOpportunityNode {
   CloseDate: { value: string };
   StageName: { value: string };
   Owner: {
+    Id: string;
     Name: { value: string };
     SmallPhotoUrl: { value: string | null };
   };
@@ -38,6 +39,7 @@ function flatten(node: RawOpportunityNode): Opportunity {
     CloseDate: node.CloseDate.value,
     StageName: node.StageName.value,
     Owner: {
+      Id: node.Owner.Id,
       Name: node.Owner.Name.value,
       SmallPhotoUrl: node.Owner.SmallPhotoUrl.value,
     },

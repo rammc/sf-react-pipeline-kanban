@@ -8,12 +8,14 @@ export interface KanbanColumnProps {
   opportunities: Opportunity[];
   /** ID of the card currently being dragged, if any. */
   draggingId: string | null;
+  onUpdateAmount: (id: string, next: number) => Promise<void>;
 }
 
 export function KanbanColumn({
   stage,
   opportunities,
   draggingId,
+  onUpdateAmount,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value });
 
@@ -47,7 +49,11 @@ export function KanbanColumn({
           </p>
         ) : (
           opportunities.map(opp => (
-            <DraggableOpportunityCard key={opp.Id} opportunity={opp} />
+            <DraggableOpportunityCard
+              key={opp.Id}
+              opportunity={opp}
+              onUpdateAmount={onUpdateAmount}
+            />
           ))
         )}
       </div>

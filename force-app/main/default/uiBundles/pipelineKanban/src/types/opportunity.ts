@@ -17,6 +17,7 @@ export interface Opportunity {
   CloseDate: string;
   StageName: string;
   Owner: {
+    Id: string;
     Name: string;
     SmallPhotoUrl: string | null;
   };

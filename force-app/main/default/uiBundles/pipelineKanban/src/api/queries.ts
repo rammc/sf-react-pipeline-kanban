@@ -41,6 +41,7 @@ export const OPPORTUNITIES_QUERY = /* GraphQL */ `
                 value
               }
               Owner {
+                Id
                 Name {
                   value
                 }

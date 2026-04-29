@@ -5,6 +5,7 @@ import { OpportunityCard } from './OpportunityCard';
 
 export interface DraggableOpportunityCardProps {
   opportunity: Opportunity;
+  onUpdateAmount: (id: string, next: number) => Promise<void>;
 }
 
 /**
@@ -17,6 +18,7 @@ export interface DraggableOpportunityCardProps {
  */
 export function DraggableOpportunityCard({
   opportunity,
+  onUpdateAmount,
 }: DraggableOpportunityCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -33,7 +35,7 @@ export function DraggableOpportunityCard({
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <OpportunityCard opportunity={opportunity} />
+      <OpportunityCard opportunity={opportunity} onUpdateAmount={onUpdateAmount} />
     </div>
   );
 }

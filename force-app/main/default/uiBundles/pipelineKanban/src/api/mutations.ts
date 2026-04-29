@@ -20,3 +20,18 @@ export const UPDATE_OPPORTUNITY_STAGE_MUTATION = /* GraphQL */ `
     }
   }
 `;
+
+export const UPDATE_OPPORTUNITY_AMOUNT_MUTATION = /* GraphQL */ `
+  mutation UpdateOpportunityAmount($input: OpportunityUpdateInput!) {
+    uiapi {
+      OpportunityUpdate(input: $input) {
+        Record {
+          Id
+          Amount {
+            value
+          }
+        }
+      }
+    }
+  }
+`;

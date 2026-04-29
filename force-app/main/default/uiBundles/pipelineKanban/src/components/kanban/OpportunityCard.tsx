@@ -1,23 +1,40 @@
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Opportunity } from '@/types/opportunity';
 import { formatCloseDate, formatCurrency, initials } from '@/utils/format';
+import { InlineEditAmount } from './InlineEditAmount';
 
 export interface OpportunityCardProps {
   opportunity: Opportunity;
+  /** Optional — when omitted, Amount renders read-only (DragOverlay copy). */
+  onUpdateAmount?: (id: string, next: number) => Promise<void>;
 }
 
-// Salesforce profile-photo URLs require the user's session cookie to load.
-// Through `sf ui-bundle dev`'s proxy that cookie isn't injected on image
-// requests, so the photo redirects to the login page and the <img> errors
-// out. We skip the image entirely until a real org session is available
-// and rely on the initials fallback. Production deploys (Phase 6) where
-// the bundle runs inside Lightning will have the cookie and the avatar
-// will render.
+// Salesforce profile-photo URLs need a session cookie that the dev
+// proxy can't inject. Skip them in dev; production opt-in via PROD.
 const ALLOW_PROFILE_PHOTOS = import.meta.env.PROD;
 
-export function OpportunityCard({ opportunity }: OpportunityCardProps) {
-  const { Name, Amount, CloseDate, Owner } = opportunity;
+export function OpportunityCard({
+  opportunity,
+  onUpdateAmount,
+}: OpportunityCardProps) {
+  const { Id, Name, Amount, CloseDate, Owner } = opportunity;
+  const [editing, setEditing] = useState(false);
+
+  async function handleSave(next: number) {
+    if (!onUpdateAmount) {
+      setEditing(false);
+      return;
+    }
+    try {
+      await onUpdateAmount(Id, next);
+      setEditing(false);
+    } catch {
+      // KanbanBoard rolls state back and surfaces the toast; we keep
+      // the editor open so the user can correct or cancel.
+    }
+  }
 
   return (
     <Card size="sm" className="hover:ring-foreground/30 transition">
@@ -28,7 +45,24 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
       </CardHeader>
       <CardContent className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-col text-xs text-muted-foreground">
-          <span className="font-mono text-foreground">{formatCurrency(Amount)}</span>
+          {editing && onUpdateAmount ? (
+            <InlineEditAmount
+              initialAmount={Amount}
+              onSave={handleSave}
+              onCancel={() => setEditing(false)}
+            />
+          ) : (
+            <button
+              type="button"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={() => onUpdateAmount && setEditing(true)}
+              disabled={!onUpdateAmount}
+              className="text-left font-mono text-foreground hover:underline disabled:cursor-default disabled:no-underline"
+              title={onUpdateAmount ? 'Click to edit amount' : undefined}
+            >
+              {formatCurrency(Amount)}
+            </button>
+          )}
           <span>{formatCloseDate(CloseDate)}</span>
           <span className="truncate">{Owner.Name}</span>
         </div>

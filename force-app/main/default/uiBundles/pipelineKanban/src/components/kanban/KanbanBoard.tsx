@@ -14,9 +14,13 @@ import { toast } from '@/components/ui/sonner';
 import { useOpportunities } from '@/hooks/useOpportunities';
 import { useStages } from '@/hooks/useStages';
 import { useUpdateStage } from '@/hooks/useUpdateStage';
+import { useUpdateAmount } from '@/hooks/useUpdateAmount';
+import { useFilterStore } from '@/store/filterStore';
 import type { Opportunity } from '@/types/opportunity';
 import { BoardSkeleton } from './BoardSkeleton';
 import { EmptyState } from './EmptyState';
+import { FilterBar } from './FilterBar';
+import { ForecastSidebar } from './ForecastSidebar';
 import { KanbanColumn } from './KanbanColumn';
 import { OpportunityCard } from './OpportunityCard';
 
@@ -34,11 +38,17 @@ export function KanbanBoard() {
   const { opportunities, loading: oppLoading, error: oppError } = useOpportunities();
   const { stages, loading: stageLoading, error: stageError } = useStages();
   const { mutate: updateStage } = useUpdateStage();
+  const { mutate: updateAmount } = useUpdateAmount();
+
+  // Filter inputs from zustand. Selecting individual fields keeps
+  // re-renders narrow.
+  const ownerIds = useFilterStore(s => s.ownerIds);
+  const closeDateFrom = useFilterStore(s => s.closeDateFrom);
+  const closeDateTo = useFilterStore(s => s.closeDateTo);
 
   // Local optimistic copy. Server data is source of truth on first load
-  // and after refetches; in between, we apply edits here immediately and
-  // roll back if the mutation rejects. This is the central "why React"
-  // moment of the repo — instant UI, server reconciles afterwards.
+  // and after refetches; in between we apply edits here immediately and
+  // roll back if the mutation rejects.
   const [localOpps, setLocalOpps] = useState<Opportunity[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -46,7 +56,17 @@ export function KanbanBoard() {
     setLocalOpps(opportunities);
   }, [opportunities]);
 
-  const grouped = useMemo(() => groupByStage(localOpps), [localOpps]);
+  // Client-side filter — see FilterBar comment for the rationale.
+  const visibleOpps = useMemo(() => {
+    return localOpps.filter(o => {
+      if (ownerIds.size > 0 && !ownerIds.has(o.Owner.Id)) return false;
+      if (closeDateFrom && o.CloseDate < closeDateFrom) return false;
+      if (closeDateTo && o.CloseDate > closeDateTo) return false;
+      return true;
+    });
+  }, [localOpps, ownerIds, closeDateFrom, closeDateTo]);
+
+  const grouped = useMemo(() => groupByStage(visibleOpps), [visibleOpps]);
   const draggingCard = activeId
     ? localOpps.find(o => o.Id === activeId) ?? null
     : null;
@@ -70,20 +90,34 @@ export function KanbanBoard() {
     const sourceStage = active.data.current?.sourceStage as string | undefined;
     if (!sourceStage || sourceStage === targetStage) return;
 
-    // Snapshot for rollback.
     const previous = localOpps;
     setLocalOpps(prev =>
       prev.map(o => (o.Id === oppId ? { ...o, StageName: targetStage } : o))
     );
-
     try {
       await updateStage(oppId, targetStage);
     } catch (err) {
       setLocalOpps(previous);
       const message = err instanceof Error ? err.message : 'Unknown error';
-      toast.error(`Couldn't move to "${targetStage}"`, {
-        description: message,
-      });
+      toast.error(`Couldn't move to "${targetStage}"`, { description: message });
+    }
+  }
+
+  // Same optimistic-with-rollback pattern as drag-end, applied to a
+  // single Amount field. Phase 6 may merge both into one helper once
+  // the duplication has earned its keep as a teaching beat.
+  async function handleUpdateAmount(oppId: string, next: number) {
+    const previous = localOpps;
+    setLocalOpps(prev =>
+      prev.map(o => (o.Id === oppId ? { ...o, Amount: next } : o))
+    );
+    try {
+      await updateAmount(oppId, next);
+    } catch (err) {
+      setLocalOpps(previous);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      toast.error("Couldn't update amount", { description: message });
+      throw err;
     }
   }
 
@@ -119,7 +153,8 @@ export function KanbanBoard() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
+      <FilterBar opportunities={localOpps} />
+      <div className="flex h-[calc(100vh-7rem)] gap-4 p-4">
         <main
           className="flex min-w-0 flex-1 gap-3 overflow-x-auto pb-2"
           aria-label="Pipeline board"
@@ -130,13 +165,13 @@ export function KanbanBoard() {
               stage={stage}
               opportunities={grouped.get(stage.value) ?? []}
               draggingId={activeId}
+              onUpdateAmount={handleUpdateAmount}
             />
           ))}
         </main>
-        <aside
-          className="hidden w-72 shrink-0 lg:block"
-          aria-label="Forecast sidebar (placeholder)"
-        />
+        <div className="hidden lg:block">
+          <ForecastSidebar opportunities={visibleOpps} stages={stages} />
+        </div>
       </div>
       <DragOverlay dropAnimation={null}>
         {draggingCard ? (
