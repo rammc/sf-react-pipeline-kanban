@@ -3,47 +3,180 @@
 A 30-minute read-through of how the pieces connect, why each layer
 exists, and where the trade-offs are.
 
-## Component & data flow
+## System overview
 
 ```mermaid
-flowchart TB
+flowchart LR
   subgraph SF["Salesforce Org"]
-    Opportunity[(Opportunity object)]
-    GraphQL["UI API GraphQL endpoint"]
+    direction TB
+    Opportunity[(Opportunity records)]
+    Picklist[(StageName picklist)]
+    GraphQL["GraphQL UI API<br/>/services/data/v66.0/graphql"]
     Opportunity --> GraphQL
+    Picklist --> GraphQL
   end
 
-  subgraph Proxy["sf ui-bundle dev"]
-    ViteProxy["Vite + @salesforce/vite-plugin-ui-bundle"]
-    note1["injects org auth into<br/>/services/data/v.. requests<br/>(see SETUP.md for the patches)"]
-    ViteProxy --- note1
+  subgraph Proxy["sf ui-bundle dev (Node)"]
+    direction TB
+    Vite["Vite dev server"]
+    Plugin["@salesforce/vite-plugin-ui-bundle<br/>+ @salesforce/ui-bundle/proxy<br/>(patched — see SETUP.md)"]
+    Vite --- Plugin
   end
 
-  subgraph App["React UI Bundle (browser)"]
+  subgraph Browser["Browser — React UI Bundle"]
     direction TB
     SDK["@salesforce/sdk-data<br/>createDataSDK + executeGraphQL"]
-    Hooks["useOpportunities · useStages<br/>useUpdateStage · useUpdateAmount"]
-    Store["zustand filterStore"]
-    Board["KanbanBoard<br/>(local optimistic state)"]
-    Filter["FilterBar"]
-    Forecast["ForecastSidebar"]
-    Column["KanbanColumn × N"]
-    Card["DraggableOpportunityCard"]
-    Inline["InlineEditAmount"]
+    Hooks["Hooks layer<br/>useOpportunities · useStages<br/>useUpdateStage · useUpdateAmount"]
+    Store[("zustand filterStore<br/>ownerIds · closeDateFrom/To")]
+    Board["KanbanBoard<br/>local optimistic state"]
+    Cmp["KanbanColumn × N<br/>DraggableOpportunityCard<br/>OpportunityCard<br/>InlineEditAmount<br/>FilterBar · ForecastSidebar"]
 
-    SDK --> Hooks
+    SDK <--> Hooks
     Hooks --> Board
-    Store --> Board
-    Store --> Filter
-    Board --> Filter
-    Board --> Column
-    Board --> Forecast
-    Column --> Card
-    Card --> Inline
+    Store <--> Board
+    Board <--> Cmp
   end
 
-  GraphQL -. "/services/data/v66.0/graphql" .-> ViteProxy
-  ViteProxy -. proxied -.-> SDK
+  GraphQL <-. "Bearer token<br/>(rawInstanceUrl)" .-> Plugin
+  Plugin <-. "fetch to localhost:5173" .-> SDK
+
+  classDef sf fill:#dbeafe,stroke:#1d4ed8,color:#0b1d4d
+  classDef proxy fill:#fef3c7,stroke:#b45309,color:#3c2c00
+  classDef browser fill:#dcfce7,stroke:#166534,color:#0c2d18
+  class SF,Opportunity,Picklist,GraphQL sf
+  class Proxy,Vite,Plugin proxy
+  class Browser,SDK,Hooks,Store,Board,Cmp browser
+```
+
+## Data flow — initial load
+
+How the board hydrates from a fresh page load.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant B as KanbanBoard
+  participant H as useOpportunities / useStages
+  participant SDK as @salesforce/sdk-data
+  participant P as Vite + ui-bundle proxy
+  participant O as Salesforce GraphQL
+
+  U->>B: navigate to /
+  B->>H: mount, call hooks
+  H->>SDK: executeGraphQL(OPPORTUNITIES_QUERY)
+  H->>SDK: executeGraphQL(STAGES_QUERY)
+  SDK->>P: POST /services/data/v66.0/graphql
+  P->>O: fetch with Bearer token<br/>(rawInstanceUrl)
+  O-->>P: { data: { uiapi: { ... } } }
+  P-->>SDK: response body verbatim
+  SDK-->>H: parsed JSON
+  Note over H: flatten { value }<br/>envelopes
+  H-->>B: opportunities[], stages[]
+  B->>B: setLocalOpps(opportunities)
+  B-->>U: render board
+```
+
+## Data flow — drag-and-drop with optimistic update
+
+The "why React" beat. UI moves immediately; the server reconciles
+afterwards. On rejection, local state rolls back and a toast surfaces
+the SDK's error.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant C as DraggableOpportunityCard
+  participant Col as KanbanColumn (droppable)
+  participant B as KanbanBoard
+  participant H as useUpdateStage
+  participant SDK as @salesforce/sdk-data
+  participant O as Salesforce
+
+  U->>C: pick up card
+  C->>B: onDragStart(activeId)
+  U->>Col: drop on target column
+  Col->>B: onDragEnd(active, over)
+  B->>B: snapshot = localOpps
+  B->>B: setLocalOpps(prev where StageName replaced)
+  B-->>U: card visually in new column instantly
+  B->>H: updateStage(oppId, targetStage)
+  H->>SDK: executeGraphQL(UPDATE_OPPORTUNITY_STAGE_MUTATION)
+  SDK->>O: POST /graphql
+
+  alt success
+    O-->>SDK: { Record: { Id, StageName: { value } } }
+    SDK-->>H: resolved
+    H-->>B: void (no state change — already optimistic)
+    Note over B,U: nothing more to render
+  else error (FLS, network, validation)
+    O-->>SDK: errors[] or HTTP failure
+    SDK-->>H: throw
+    H-->>B: rejected promise
+    B->>B: setLocalOpps(snapshot)
+    B->>U: toast.error("Couldn't move to …")
+    B-->>U: card snaps back
+  end
+```
+
+## Data flow — inline Amount edit
+
+Same optimistic shape applied to a single field. The form component
+stays dumb; KanbanBoard owns the rollback.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant Card as OpportunityCard
+  participant Form as InlineEditAmount
+  participant B as KanbanBoard
+  participant H as useUpdateAmount
+  participant O as Salesforce
+
+  U->>Card: click Amount
+  Card->>Form: render inline form (auto-focus)
+  U->>Form: edit value, press Enter
+  Form->>B: handleUpdateAmount(id, next)
+  B->>B: snapshot = localOpps
+  B->>B: setLocalOpps(prev with new Amount)
+  B->>H: updateAmount(id, next)
+  H->>O: POST /graphql (mutation)
+
+  alt success
+    O-->>H: resolved
+    H-->>B: void
+    B-->>Form: resolved
+    Form->>Card: close editor
+    Note over U: ForecastSidebar updates<br/>via useMemo on localOpps
+  else error
+    O-->>H: throw
+    H-->>B: rejected
+    B->>B: setLocalOpps(snapshot)
+    B->>U: toast.error("Couldn't update amount")
+    B-->>Form: rejected (editor stays open for retry)
+  end
+```
+
+## Data flow — filter + forecast (no network)
+
+Filters never hit the server. Both the filtered card list and the
+weighted-forecast totals are pure derivations over `localOpps`.
+
+```mermaid
+flowchart LR
+  U[User] -->|toggle owner / set date| FB[FilterBar]
+  FB -->|toggleOwner / setCloseDateFrom/To| FS[(zustand filterStore)]
+  FS --> KB[KanbanBoard]
+  KB -->|"useMemo(filter)"| VO["visibleOpps[]"]
+  VO -->|groupByStage| Cols[KanbanColumns]
+  VO --> Forecast[ForecastSidebar]
+  Forecast -->|"Σ Amount × probability"| U
+  Cols -->|cards re-render| U
+
+  classDef store fill:#fef3c7,stroke:#b45309,color:#3c2c00
+  class FS store
 ```
 
 ## Layers
