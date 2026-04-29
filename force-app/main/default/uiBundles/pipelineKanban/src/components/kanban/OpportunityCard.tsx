@@ -1,25 +1,23 @@
 import { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { stageAccent } from '@/lib/stageColors';
 import type { Opportunity } from '@/types/opportunity';
 import { formatCloseDate, formatCurrency, initials } from '@/utils/format';
 import { InlineEditAmount } from './InlineEditAmount';
 
 export interface OpportunityCardProps {
   opportunity: Opportunity;
-  /** Optional — when omitted, Amount renders read-only (DragOverlay copy). */
+  /** Omitted on the DragOverlay clone — Amount becomes read-only. */
   onUpdateAmount?: (id: string, next: number) => Promise<void>;
+  /** Render the dark-bordered, shadowed variant used inside DragOverlay. */
+  overlay?: boolean;
 }
-
-// Salesforce profile-photo URLs need a session cookie that the dev
-// proxy can't inject. Skip them in dev; production opt-in via PROD.
-const ALLOW_PROFILE_PHOTOS = import.meta.env.PROD;
 
 export function OpportunityCard({
   opportunity,
   onUpdateAmount,
+  overlay,
 }: OpportunityCardProps) {
-  const { Id, Name, Amount, CloseDate, Owner } = opportunity;
+  const { Id, Name, Amount, CloseDate, StageName, Owner } = opportunity;
   const [editing, setEditing] = useState(false);
 
   async function handleSave(next: number) {
@@ -31,48 +29,63 @@ export function OpportunityCard({
       await onUpdateAmount(Id, next);
       setEditing(false);
     } catch {
-      // KanbanBoard rolls state back and surfaces the toast; we keep
-      // the editor open so the user can correct or cancel.
+      // KanbanBoard rolls state back and surfaces the toast; the
+      // editor stays open so the user can correct or cancel.
     }
   }
 
+  const accent = stageAccent(StageName);
+  const borderClasses = overlay
+    ? 'border-ink shadow-md'
+    : 'border-card-edge hover:border-card-edge-hover';
+
   return (
-    <Card size="sm" className="hover:ring-foreground/30 transition">
-      <CardHeader className="pb-1">
-        <CardTitle className="line-clamp-2 text-sm font-medium">
+    <article
+      className={`relative rounded-[4px] border bg-surface-card transition-colors ${borderClasses}`}
+      style={{ borderLeft: `2px solid ${accent}` }}
+    >
+      {/* Avatar — absolute top-right, neutral outline, no fill */}
+      <span
+        title={Owner.Name}
+        aria-label={`Owner ${Owner.Name}`}
+        className="pointer-events-none absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border border-[#d8d4c8] bg-transparent font-mono text-[10px] text-ink"
+      >
+        {initials(Owner.Name) || '?'}
+      </span>
+
+      <div className="px-[14px] py-[12px]">
+        {/* Amount — top-left, dominant. Click to edit. */}
+        {editing && onUpdateAmount ? (
+          <InlineEditAmount
+            initialAmount={Amount}
+            onSave={handleSave}
+            onCancel={() => setEditing(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            onPointerDown={e => e.stopPropagation()}
+            onClick={() => onUpdateAmount && setEditing(true)}
+            disabled={!onUpdateAmount}
+            className="block text-left font-mono text-[16px] font-medium text-ink hover:underline disabled:cursor-default disabled:no-underline"
+            title={onUpdateAmount ? 'Click to edit amount' : undefined}
+          >
+            {formatCurrency(Amount)}
+          </button>
+        )}
+
+        {/* Account name */}
+        <p className="mt-[2px] text-[14px] font-medium text-ink leading-tight pr-8">
           {Name}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-col text-xs text-muted-foreground">
-          {editing && onUpdateAmount ? (
-            <InlineEditAmount
-              initialAmount={Amount}
-              onSave={handleSave}
-              onCancel={() => setEditing(false)}
-            />
-          ) : (
-            <button
-              type="button"
-              onPointerDown={e => e.stopPropagation()}
-              onClick={() => onUpdateAmount && setEditing(true)}
-              disabled={!onUpdateAmount}
-              className="text-left font-mono text-foreground hover:underline disabled:cursor-default disabled:no-underline"
-              title={onUpdateAmount ? 'Click to edit amount' : undefined}
-            >
-              {formatCurrency(Amount)}
-            </button>
-          )}
-          <span>{formatCloseDate(CloseDate)}</span>
-          <span className="truncate">{Owner.Name}</span>
-        </div>
-        <Avatar size="sm" title={Owner.Name}>
-          {ALLOW_PROFILE_PHOTOS && Owner.SmallPhotoUrl && (
-            <AvatarImage src={Owner.SmallPhotoUrl} alt={Owner.Name} />
-          )}
-          <AvatarFallback>{initials(Owner.Name) || '?'}</AvatarFallback>
-        </Avatar>
-      </CardContent>
-    </Card>
+        </p>
+
+        {/* Footer — date · owner */}
+        <p className="mt-[6px] text-[11px] text-ink-muted">
+          <span className="font-mono">{formatCloseDate(CloseDate)}</span>
+          <span className="mx-1.5">·</span>
+          <span>{Owner.Name}</span>
+        </p>
+      </div>
+    </article>
   );
 }

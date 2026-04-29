@@ -28,8 +28,10 @@ export function DraggableOpportunityCard({
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    // Hide the original while DragOverlay paints the floating copy.
-    opacity: isDragging ? 0 : 1,
+    // Source card stays partially visible while DragOverlay floats
+    // the clone — gives the user a clear "this is where it came from"
+    // signal without the rotate/shadow flourishes.
+    opacity: isDragging ? 0.4 : 1,
     cursor: 'grab',
   };
 

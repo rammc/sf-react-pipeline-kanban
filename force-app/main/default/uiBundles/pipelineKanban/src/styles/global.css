@@ -1,5 +1,29 @@
 @import 'tailwindcss';
 
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Visual refinement pass — tokens. surface-* for backgrounds,
+   card-edge for card borders, ink-* for text. Adopted across the
+   kanban components in place of raw hex; shadcn primitives keep
+   their own tokens (--card, --foreground, …) untouched. */
+@theme {
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --color-surface-app: #f5f3ec;
+  --color-surface-card: #fbfaf6;
+
+  --color-card-edge: #e8e6df;
+  --color-card-edge-hover: #c8c4b8;
+
+  --color-ink: #1a1a1a;
+  --color-ink-muted: #7a7770;
+  --color-ink-subtle: #8a8a85;
+}
+
 @layer base {
   html,
   body,
@@ -8,14 +32,16 @@
   }
 
   body {
-    @apply antialiased bg-white;
+    @apply antialiased font-sans text-[14px];
+    background-color: var(--color-surface-app);
+    color: var(--color-ink);
+  }
+
+  /* Numerals always tabular — currency columns line up by digit. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 }
-
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
-
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);

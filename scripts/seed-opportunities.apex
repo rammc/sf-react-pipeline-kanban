@@ -4,22 +4,27 @@
  * Run as anonymous Apex against a scratch org or sandbox:
  *   sf apex run --file scripts/seed-opportunities.apex
  *
- * Idempotent. Deletes any prior demo data with the prefix
- * 'Pipeline Kanban Demo' before inserting, so the script can be
- * re-run to reset. Empty-state testing: comment out the insert
- * block and re-run, or run scripts/clear-opportunities.apex (TODO).
+ * Idempotent. Identifies its own data by the demo Account (Name =
+ * 'Pipeline Kanban Demo Co.') and by the Description marker on each
+ * Opportunity, so re-running cleans up the previous run without
+ * touching unrelated records.
  *
- * Creates 30 Opportunities across the standard Opportunity StageName
- * picklist values, Amount between 10k and 500k, CloseDate spread over
- * the next 90 days. Every Opportunity is owned by the running user so
- * that Owner.SmallPhotoUrl resolves to a User profile photo —
- * Queue-owned records have a null SmallPhotoUrl, which the
- * OpportunityCard component handles with an initials fallback.
+ * Creates 30 Opportunities across whatever StageName picklist values
+ * the org actually has, Amount between 10k and 500k, CloseDate spread
+ * over the next 90 days. Every record is owned by the running user
+ * so Owner.SmallPhotoUrl resolves (User-owned, not Queue-owned).
  */
 
-// 1. Cleanup — preserve any non-demo data already in the org.
-delete [SELECT Id FROM Opportunity WHERE Name LIKE 'Pipeline Kanban Demo%'];
-delete [SELECT Id FROM Account WHERE Name = 'Pipeline Kanban Demo Co.'];
+// 1. Cleanup — scoped to the demo Account so we never touch
+//    unrelated data, even if a real Opportunity happens to share a
+//    company name with our seed list.
+List<Account> demoAccounts = [
+  SELECT Id FROM Account WHERE Name = 'Pipeline Kanban Demo Co.'
+];
+if (!demoAccounts.isEmpty()) {
+  delete [SELECT Id FROM Opportunity WHERE AccountId IN :demoAccounts];
+  delete demoAccounts;
+}
 
 // 2. Anchor Account so Opportunities have a relationship even when
 //    a validation rule requires AccountId.
@@ -28,8 +33,6 @@ insert demoAccount;
 
 // 3. Read the active StageName picklist values from the running org
 //    so the seed adapts to whatever customisations are in place.
-//    Avoids hard-coding standard stages that may have been renamed
-//    or replaced (e.g. 'Prospecting' → 'Discovery' is common).
 List<String> stages = new List<String>();
 for (Schema.PicklistEntry e : Opportunity.StageName.getDescribe().getPicklistValues()) {
   if (e.isActive()) stages.add(e.getValue());
@@ -53,6 +56,8 @@ List<String> companies = new List<String>{
 
 // 4. Build 30 records with a deterministic but varied distribution
 //    so the Kanban view is visually balanced on first load.
+//    Names carry no demo prefix — the Description field marks them
+//    as seeded for cleanup queries that don't have the Account context.
 List<Opportunity> opps = new List<Opportunity>();
 for (Integer i = 0; i < companies.size(); i++) {
   String stage   = stages[Math.mod(i, stages.size())];
@@ -60,12 +65,13 @@ for (Integer i = 0; i < companies.size(); i++) {
   Date closeOn   = Date.today().addDays(Math.mod(i * 13, 90));
 
   opps.add(new Opportunity(
-    Name      = 'Pipeline Kanban Demo: ' + companies[i],
-    AccountId = demoAccount.Id,
-    StageName = stage,
-    Amount    = amount,
-    CloseDate = closeOn,
-    OwnerId   = UserInfo.getUserId()
+    Name        = companies[i],
+    Description = 'Seeded by Pipeline Kanban demo',
+    AccountId   = demoAccount.Id,
+    StageName   = stage,
+    Amount      = amount,
+    CloseDate   = closeOn,
+    OwnerId     = UserInfo.getUserId()
   ));
 }
 insert opps;

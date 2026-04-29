@@ -28,15 +28,15 @@ export default function AppLayout() {
 
   return (
     <>
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="text-xl font-semibold text-gray-900">
+      <nav className="border-b border-card-edge bg-surface-app">
+        <div className="px-6">
+          <div className="flex h-16 items-center justify-between">
+            <Link to="/" className="text-[18px] font-medium text-ink">
               Pipeline Kanban
             </Link>
             <button
               onClick={toggleMenu}
-              className="p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="p-2 text-ink hover:bg-card-edge/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30"
               aria-label="Toggle menu"
             >
               <div className="w-6 h-6 flex flex-col justify-center space-y-1.5">
@@ -58,16 +58,16 @@ export default function AppLayout() {
           </div>
           {isOpen && (
             <div className="pb-4">
-              <div className="flex flex-col space-y-2">
+              <div className="flex flex-col space-y-1">
                 {navigationRoutes.map(item => (
                   <Link
                     key={item.path}
                     to={item.path}
                     onClick={() => setIsOpen(false)}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 text-[13px] font-medium transition-colors ${
                       isActive(item.path)
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-card-edge/60 text-ink'
+                        : 'text-ink-muted hover:bg-card-edge/30 hover:text-ink'
                     }`}
                   >
                     {item.label}

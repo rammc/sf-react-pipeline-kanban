@@ -42,14 +42,14 @@ export function FilterBar({ opportunities }: FilterBarProps) {
 
   return (
     <section
-      className="flex flex-wrap items-end gap-4 border-b bg-background/60 px-4 py-3"
+      className="flex flex-wrap items-end gap-4 px-6 py-3"
       aria-label="Pipeline filters"
     >
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">Owner</span>
+        <span className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted">Owner</span>
         <div className="flex flex-wrap gap-1">
           {owners.length === 0 ? (
-            <span className="text-xs text-muted-foreground">—</span>
+            <span className="text-[12px] text-ink-subtle">—</span>
           ) : (
             owners.map(o => {
               const active = ownerIds.has(o.Id);
@@ -75,31 +75,31 @@ export function FilterBar({ opportunities }: FilterBarProps) {
       <div className="flex flex-col gap-1">
         <label
           htmlFor="closeDateFrom"
-          className="text-xs font-medium text-muted-foreground"
+          className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted"
         >
-          Close date from
+          Close from
         </label>
         <Input
           id="closeDateFrom"
           type="date"
           value={closeDateFrom ?? ''}
           onChange={e => setCloseDateFrom(e.target.value || null)}
-          className="w-40"
+          className="w-40 font-mono"
         />
       </div>
       <div className="flex flex-col gap-1">
         <label
           htmlFor="closeDateTo"
-          className="text-xs font-medium text-muted-foreground"
+          className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-muted"
         >
-          Close date to
+          Close to
         </label>
         <Input
           id="closeDateTo"
           type="date"
           value={closeDateTo ?? ''}
           onChange={e => setCloseDateTo(e.target.value || null)}
-          className="w-40"
+          className="w-40 font-mono"
         />
       </div>
 

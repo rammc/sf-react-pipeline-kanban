@@ -20,7 +20,7 @@ import type { Opportunity } from '@/types/opportunity';
 import { BoardSkeleton } from './BoardSkeleton';
 import { EmptyState } from './EmptyState';
 import { FilterBar } from './FilterBar';
-import { ForecastSidebar } from './ForecastSidebar';
+import { ForecastBar } from './ForecastBar';
 import { KanbanColumn } from './KanbanColumn';
 import { OpportunityCard } from './OpportunityCard';
 
@@ -40,15 +40,10 @@ export function KanbanBoard() {
   const { mutate: updateStage } = useUpdateStage();
   const { mutate: updateAmount } = useUpdateAmount();
 
-  // Filter inputs from zustand. Selecting individual fields keeps
-  // re-renders narrow.
   const ownerIds = useFilterStore(s => s.ownerIds);
   const closeDateFrom = useFilterStore(s => s.closeDateFrom);
   const closeDateTo = useFilterStore(s => s.closeDateTo);
 
-  // Local optimistic copy. Server data is source of truth on first load
-  // and after refetches; in between we apply edits here immediately and
-  // roll back if the mutation rejects.
   const [localOpps, setLocalOpps] = useState<Opportunity[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -56,7 +51,6 @@ export function KanbanBoard() {
     setLocalOpps(opportunities);
   }, [opportunities]);
 
-  // Client-side filter — see FilterBar comment for the rationale.
   const visibleOpps = useMemo(() => {
     return localOpps.filter(o => {
       if (ownerIds.size > 0 && !ownerIds.has(o.Owner.Id)) return false;
@@ -103,9 +97,6 @@ export function KanbanBoard() {
     }
   }
 
-  // Same optimistic-with-rollback pattern as drag-end, applied to a
-  // single Amount field. Phase 6 may merge both into one helper once
-  // the duplication has earned its keep as a teaching beat.
   async function handleUpdateAmount(oppId: string, next: number) {
     const previous = localOpps;
     setLocalOpps(prev =>
@@ -123,11 +114,10 @@ export function KanbanBoard() {
 
   if (oppLoading || stageLoading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] min-w-0 gap-4 p-4">
-        <div className="flex min-w-0 flex-1">
+      <div className="flex h-[calc(100vh-4rem)] flex-col">
+        <div className="flex flex-1 min-h-0 gap-4 px-6 py-4">
           <BoardSkeleton />
         </div>
-        <aside className="hidden w-72 shrink-0 lg:block" aria-label="Forecast sidebar (placeholder)" />
       </div>
     );
   }
@@ -135,8 +125,9 @@ export function KanbanBoard() {
   if (oppError || stageError) {
     const message = oppError?.message ?? stageError?.message ?? 'Unknown error';
     return (
-      <div className="m-4 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm">
-        <strong>Failed to load pipeline.</strong> {message}
+      <div className="m-6 rounded border border-destructive/40 bg-destructive/5 p-4 text-[13px]">
+        <strong className="font-medium">Failed to load pipeline.</strong>{' '}
+        {message}
       </div>
     );
   }
@@ -153,10 +144,14 @@ export function KanbanBoard() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <FilterBar opportunities={localOpps} />
-      <div className="flex h-[calc(100vh-7rem)] gap-4 p-4">
+      {/* h-16 is AppLayout's nav. Everything below it lives in this
+          flex column, so the board scrolls horizontally without
+          consuming the vertical viewport. */}
+      <div className="flex h-[calc(100vh-4rem)] flex-col">
+        <FilterBar opportunities={localOpps} />
+        <ForecastBar opportunities={visibleOpps} stages={stages} />
         <main
-          className="flex min-w-0 flex-1 gap-3 overflow-x-auto pb-2"
+          className="flex min-h-0 flex-1 gap-4 overflow-x-auto px-6 py-4"
           aria-label="Pipeline board"
         >
           {stages.map(stage => (
@@ -169,14 +164,12 @@ export function KanbanBoard() {
             />
           ))}
         </main>
-        <div className="hidden lg:block">
-          <ForecastSidebar opportunities={visibleOpps} stages={stages} />
-        </div>
       </div>
+
       <DragOverlay dropAnimation={null}>
         {draggingCard ? (
-          <div className="w-72 rotate-1 cursor-grabbing opacity-95 shadow-lg">
-            <OpportunityCard opportunity={draggingCard} />
+          <div className="w-72 cursor-grabbing">
+            <OpportunityCard opportunity={draggingCard} overlay />
           </div>
         ) : null}
       </DragOverlay>
