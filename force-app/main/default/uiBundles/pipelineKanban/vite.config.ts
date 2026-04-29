@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
 
       // Setup files to run before each test
-      setupFiles: ['./src/test/setup.ts'],
+      setupFiles: ['./vitest.setup.ts'],
 
       // Global test patterns
       include: [

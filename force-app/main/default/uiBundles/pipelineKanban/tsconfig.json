@@ -28,13 +28,7 @@
       "@components/*": ["./src/components/*"],
       "@utils/*": ["./src/utils/*"],
       "@styles/*": ["./src/styles/*"],
-      "@assets/*": ["./src/assets/*"],
-      "@salesforce/sdk-core": [
-        "../../../../../../../../../../packages/sdk/sdk-core/src/index.ts"
-      ],
-      "@salesforce/sdk-data": [
-        "../../../../../../../../../../packages/sdk/sdk-data/src/index.ts"
-      ]
+      "@assets/*": ["./src/assets/*"]
     }
   },
   "include": [
