@@ -1,13 +1,27 @@
+import { useDroppable } from '@dnd-kit/core';
 import type { Opportunity, Stage } from '@/types/opportunity';
 import { formatCurrency } from '@/utils/format';
-import { OpportunityCard } from './OpportunityCard';
+import { DraggableOpportunityCard } from './DraggableOpportunityCard';
 
 export interface KanbanColumnProps {
   stage: Stage;
   opportunities: Opportunity[];
+  /** ID of the card currently being dragged, if any. */
+  draggingId: string | null;
 }
 
-export function KanbanColumn({ stage, opportunities }: KanbanColumnProps) {
+export function KanbanColumn({
+  stage,
+  opportunities,
+  draggingId,
+}: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage.value });
+
+  // Suppress the highlight when the drag started inside this column —
+  // dropping back where you came from is a no-op, no need to invite it.
+  const draggingFromHere = opportunities.some(o => o.Id === draggingId);
+  const showDropHighlight = isOver && !draggingFromHere;
+
   const totalAmount = opportunities.reduce(
     (sum, o) => sum + (o.Amount ?? 0),
     0
@@ -15,7 +29,9 @@ export function KanbanColumn({ stage, opportunities }: KanbanColumnProps) {
 
   return (
     <section
-      className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/40"
+      ref={setNodeRef}
+      data-drop-active={showDropHighlight ? 'true' : undefined}
+      className="flex w-72 shrink-0 flex-col rounded-lg bg-muted/40 transition-colors data-[drop-active=true]:bg-primary/10 data-[drop-active=true]:ring-2 data-[drop-active=true]:ring-primary/40"
       aria-label={`Stage column ${stage.label}`}
     >
       <header className="flex items-baseline justify-between border-b px-3 py-2">
@@ -31,7 +47,7 @@ export function KanbanColumn({ stage, opportunities }: KanbanColumnProps) {
           </p>
         ) : (
           opportunities.map(opp => (
-            <OpportunityCard key={opp.Id} opportunity={opp} />
+            <DraggableOpportunityCard key={opp.Id} opportunity={opp} />
           ))
         )}
       </div>

@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router';
 import { getAllRoutes } from './router-utils';
 import { useState } from 'react';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function AppLayout() {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,6 +79,7 @@ export default function AppLayout() {
         </div>
       </nav>
       <Outlet />
+      <Toaster />
     </>
   );
 }
