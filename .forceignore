@@ -10,3 +10,11 @@ package.xml
 
 # LWC Jest
 **/__tests__/**
+
+# Multi-Framework UIBundle source — the .uibundle-meta.xml metadata type
+# is not yet in the source-deploy-retrieve registry as of CLI v2.118 +
+# plugin-ui-bundle-dev v1.2.2 (Multi-Framework Beta). Bundles are run
+# locally via `sf ui-bundle dev` for now; remove this ignore once the
+# beta exits and the registry catches up.
+**/uiBundles/**
+**/node_modules/**

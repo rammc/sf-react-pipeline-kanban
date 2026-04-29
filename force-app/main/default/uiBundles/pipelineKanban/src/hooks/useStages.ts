@@ -1,44 +1,56 @@
 import { useEffect, useState } from 'react';
 import { executeGraphQL } from '@/api/graphqlClient';
-import { STAGES_QUERY } from '@/api/queries';
+import { MASTER_RECORD_TYPE_ID, STAGES_QUERY } from '@/api/queries';
 import type { Stage } from '@/types/opportunity';
 
 interface RawPicklistValue {
   value: string;
   label: string;
-  active: boolean;
+}
+
+interface RawField {
+  ApiName: string;
+  picklistValuesByRecordTypeIDs?: {
+    recordTypeID: string;
+    picklistValues: RawPicklistValue[];
+  }[];
+}
+
+interface RawObjectInfo {
+  ApiName: string;
+  fields: RawField[];
 }
 
 interface StagesResponse {
   uiapi: {
-    objectInfos: {
-      Opportunity: {
-        fields: {
-          StageName: {
-            picklistValues?: RawPicklistValue[];
-          };
-        };
-      };
-    };
+    objectInfos: RawObjectInfo[];
   };
 }
 
+interface StagesVariables {
+  recordTypeIDs: string[];
+}
+
 /**
- * Default forecast probabilities for the standard Sales Cloud stages.
+ * Forecast probabilities for the standard Sales Cloud stages.
  * Salesforce's GraphQL API does not expose forecast probability per
- * picklist value, so we hard-code the standard mapping. Real orgs
- * with custom stages will need to swap this for an Apex callout — see
- * docs/ARCHITECTURE.md for the rationale.
+ * picklist value, so the mapping is hard-coded. Orgs with custom
+ * stages have entries default to 0 — add them here, or replace with
+ * an Apex callout that reads OpportunityStage metadata.
  */
 const DEFAULT_PROBABILITIES: Record<string, number> = {
   Prospecting: 0.1,
   Qualification: 0.1,
+  Discovery: 0.2,
   'Needs Analysis': 0.2,
   'Value Proposition': 0.5,
   'Id. Decision Makers': 0.6,
   'Perception Analysis': 0.7,
   'Proposal/Price Quote': 0.75,
+  'Proposal/Quote': 0.75,
+  Quotation: 0.75,
   'Negotiation/Review': 0.9,
+  Negotiation: 0.9,
   'Closed Won': 1.0,
   'Closed Lost': 0.0,
 };
@@ -58,20 +70,27 @@ export function useStages(): UseStagesResult {
     let cancelled = false;
     (async () => {
       try {
-        const response = await executeGraphQL<
-          StagesResponse,
-          Record<string, never>
-        >(STAGES_QUERY);
+        const response = await executeGraphQL<StagesResponse, StagesVariables>(
+          STAGES_QUERY,
+          { recordTypeIDs: [MASTER_RECORD_TYPE_ID] }
+        );
         if (cancelled) return;
-        const values = response.uiapi.objectInfos.Opportunity.fields.StageName.picklistValues ?? [];
+
+        const oppInfo = response.uiapi.objectInfos.find(
+          o => o.ApiName === 'Opportunity'
+        );
+        const stageField = oppInfo?.fields.find(f => f.ApiName === 'StageName');
+        const masterEntry = stageField?.picklistValuesByRecordTypeIDs?.find(
+          e => e.recordTypeID === MASTER_RECORD_TYPE_ID
+        );
+        const values = masterEntry?.picklistValues ?? [];
+
         setStages(
-          values
-            .filter(v => v.active)
-            .map(v => ({
-              value: v.value,
-              label: v.label,
-              probability: DEFAULT_PROBABILITIES[v.value] ?? 0,
-            }))
+          values.map(v => ({
+            value: v.value,
+            label: v.label,
+            probability: DEFAULT_PROBABILITIES[v.value] ?? 0,
+          }))
         );
       } catch (err) {
         if (cancelled) return;

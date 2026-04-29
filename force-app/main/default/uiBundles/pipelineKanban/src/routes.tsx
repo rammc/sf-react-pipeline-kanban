@@ -1,6 +1,6 @@
 import type { RouteObject } from 'react-router';
 import AppLayout from '@/appLayout';
-import Home from './pages/Home';
+import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import NotFound from './pages/NotFound';
 
 export const routes: RouteObject[] = [
@@ -10,8 +10,8 @@ export const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Home />,
-        handle: { showInNavigation: true, label: 'Home' },
+        element: <KanbanBoard />,
+        handle: { showInNavigation: true, label: 'Pipeline' },
       },
       {
         path: '*',

@@ -1,14 +1,24 @@
 /**
  * GraphQL query strings for the Pipeline Kanban.
  *
- * These follow the Salesforce UI API GraphQL convention (uiapi.query.*,
- * fields wrapped in `{ value }`). Multi-Framework Beta may diverge —
- * verify against the Beta SDK reference before relying on this in
- * production.
+ * Verified against the Salesforce UI API GraphQL endpoint
+ * (`/services/data/v66.0/graphql`) on a live sandbox. Both the
+ * envelope shapes and the picklist traversal match the schema as
+ * introspected.
  *
- * TODO: verify against Beta SDK reference
- *   https://developer.salesforce.com/docs/platform/multi-framework/
+ * Schema notes worth knowing:
+ *   - `uiapi.query.Opportunity` is a Connection (edges/node) — not a flat list.
+ *   - All scalar fields are wrapped in `{ value }`. Some also expose
+ *     `displayValue` (server-formatted, locale-aware) — we deliberately
+ *     read `value` and format with Intl.NumberFormat in the React layer.
+ *   - `uiapi.objectInfos` is a list. Picklist values live under
+ *     `picklistValuesByRecordTypeIDs`, not `picklistValues`.
+ *   - Picklist queries require an `objectInfoInputs` argument with
+ *     a `recordTypeIDs` list. The master record type ID
+ *     '012000000000000AAA' returns the union across record types.
  */
+
+export const MASTER_RECORD_TYPE_ID = '012000000000000AAA';
 
 export const OPPORTUNITIES_QUERY = /* GraphQL */ `
   query Opportunities {
@@ -47,27 +57,27 @@ export const OPPORTUNITIES_QUERY = /* GraphQL */ `
 `;
 
 /**
- * Picklist values for Opportunity.StageName.
- *
- * The exact path through the schema (objectInfos vs picklistValues entry
- * point) varies across Salesforce GraphQL versions.
- *
- * TODO: verify against Beta SDK reference
- *   https://developer.salesforce.com/docs/platform/multi-framework/
+ * Picklist values for Opportunity.StageName, scoped to the master
+ * record type. Orgs with multiple record types each have their own
+ * picklist subset; the master record type returns the union.
  */
 export const STAGES_QUERY = /* GraphQL */ `
-  query OpportunityStages {
+  query OpportunityStages($recordTypeIDs: [ID!]!) {
     uiapi {
-      objectInfos(apiNames: ["Opportunity"]) {
-        Opportunity {
-          fields {
-            StageName {
-              ... on PicklistField {
-                picklistValues {
-                  value
-                  label
-                  active
-                }
+      objectInfos(
+        objectInfoInputs: [
+          { apiName: "Opportunity", recordTypeIDs: $recordTypeIDs }
+        ]
+      ) {
+        ApiName
+        fields {
+          ApiName
+          ... on PicklistField {
+            picklistValuesByRecordTypeIDs {
+              recordTypeID
+              picklistValues {
+                value
+                label
               }
             }
           }

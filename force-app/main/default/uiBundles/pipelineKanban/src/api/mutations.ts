@@ -1,8 +1,9 @@
 /**
  * GraphQL mutation strings for the Pipeline Kanban.
  *
- * TODO: verify against Beta SDK reference
- *   https://developer.salesforce.com/docs/platform/multi-framework/
+ * Verified against the schema's UIAPIMutations.OpportunityUpdate
+ * field signature. Input shape:
+ *   { input: { Id: string, Opportunity: { ...partial Opportunity } } }
  */
 
 export const UPDATE_OPPORTUNITY_STAGE_MUTATION = /* GraphQL */ `

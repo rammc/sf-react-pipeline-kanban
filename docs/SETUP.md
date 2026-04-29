@@ -27,9 +27,34 @@ npx vitest run
 
 Tests use Vitest with mocked `@/api/graphqlClient` — no org required.
 
-## Deploy and run against an org
+## Run against an org (live preview)
 
-> The full deploy + scratch-org workflow is documented at the end of Phase 6. Until then, only the unit tests run without an org.
+The primary run path during the Multi-Framework beta is the local dev server with a GraphQL proxy to your org — **no full deploy needed**:
+
+```bash
+# 1. From the repo root, deploy the permission set + assign it.
+sf project deploy start --source-dir force-app/main/default/permissionsets --target-org <alias>
+sf org assign permset --name PipelineKanban_App --target-org <alias>
+
+# 2. (Optional) seed demo data. See note about custom stages below.
+sf apex run --file scripts/seed-opportunities.apex --target-org <alias>
+
+# 3. From the UI bundle directory, start the dev server.
+cd force-app/main/default/uiBundles/pipelineKanban
+sf ui-bundle dev --target-org <alias> --name pipelineKanban --open
+```
+
+A browser tab opens against the proxy URL. GraphQL requests flow through the org's session; React renders locally with hot reload.
+
+### Seed data
+
+`scripts/seed-opportunities.apex` reads the active `Opportunity.StageName` picklist from the running org and distributes 30 demo records across whatever stages it finds. Works on a vanilla scratch org *and* on customised sandboxes without modification.
+
+`useStages()` reads the same picklist client-side, so the board always reflects what the org actually has. Forecast probabilities (Phase 5) are mapped to common stage names — custom stages without a known mapping default to 0.
+
+### App Launcher integration — deferred to Phase 6
+
+The verified Multi-Framework metadata pattern for placing a UIBundle into a CustomTab + CustomApplication has not yet stabilised in the open beta. This repo therefore ships the dev-server flow above as the primary run path. App Launcher integration is tracked for Phase 6 (or later, depending on how the beta evolves) — once an authoritative pattern surfaces, we add a `tabs/` and `applications/` directory and document the deploy step.
 
 ## Known Beta Template Issues
 

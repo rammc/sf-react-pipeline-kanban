@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <hasActivationRequired>false</hasActivationRequired>
+    <label>Pipeline Kanban App</label>
+    <description>Permissions for the Pipeline Kanban demo board: Opportunity read+edit, FLS read on Name/CloseDate, FLS read+edit on Amount and StageName (the two mutated fields). Phase 4 failure-path test toggles StageName editable here.</description>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>Opportunity</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
+    <!-- Opportunity.Name, Opportunity.CloseDate and Opportunity.StageName are
+         system-required fields; the platform rejects explicit FLS overrides on
+         them (Salesforce returns "You cannot deploy to a required field").
+         Read+write is granted implicitly by the object permission above. The
+         only field that benefits from an explicit FLS edit grant is Amount. -->
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Opportunity.Amount</field>
+        <readable>true</readable>
+    </fieldPermissions>
+</PermissionSet>
