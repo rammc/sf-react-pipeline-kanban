@@ -298,7 +298,11 @@ data legible. None of them are there to look like a dashboard. The
 close-date heatmap (Phase 8) follows the same rule — clicking a cell
 sets the close-date filter rather than opening a detail panel — and
 intentionally consumes the _owner-filtered_ (not date-filtered) set
-so it never collapses its own context after a click.
+so it never collapses its own context after a click. Theming applies
+the same way across all components, including the funnel chart and
+the heatmap; tokens resolve at the component level via Tailwind's
+variable bindings, so a theme switch never requires a chart-specific
+override.
 
 ## What this repo intentionally does not show
 
