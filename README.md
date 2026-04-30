@@ -79,52 +79,24 @@ Three layers, one direction of data:
 
 ```mermaid
 flowchart LR
-  subgraph SF["Salesforce Org"]
-    direction TB
-    Opportunity[(Opportunity records)]
-    Picklist[(StageName picklist)]
-    GraphQL["GraphQL UI API<br/>/services/data/v66.0/graphql"]
-    Opportunity --> GraphQL
-    Picklist --> GraphQL
-  end
+  Org["<b>Salesforce Org</b><br/><small>Sandbox or Scratch Org</small><br/><br/>Opportunity records<br/>StageName picklist<br/>GraphQL UI API"]
 
-  subgraph Proxy["sf ui-bundle dev (Node)"]
-    direction TB
-    Vite["Vite dev server"]
-    Plugin["@salesforce/vite-plugin-ui-bundle<br/>+ @salesforce/ui-bundle/proxy<br/>(patched — see SETUP.md)"]
-    Vite --- Plugin
-  end
+  Dev["<b>Local Dev Server</b><br/><small>sf ui-bundle dev</small><br/><br/>Vite + ui-bundle plugin<br/>Proxy with patch-package"]
 
-  subgraph Browser["Browser — React UI Bundle"]
-    direction TB
-    SDK["@salesforce/sdk-data<br/>createDataSDK + executeGraphQL"]
-    Hooks["Hooks layer<br/>useOpportunities · useStages<br/>useUpdateStage · useUpdateAmount"]
-    Store[("zustand filterStore<br/>ownerIds · closeDateFrom/To")]
-    Board["KanbanBoard<br/>local optimistic state"]
-    Cmp["KanbanColumn × N<br/>DraggableOpportunityCard<br/>OpportunityCard<br/>InlineEditAmount<br/>FilterBar · ForecastSidebar"]
+  Browser["<b>Browser</b><br/><small>React UI Bundle</small><br/><br/>SDK · Hooks · Store<br/>KanbanBoard + Components"]
 
-    SDK <--> Hooks
-    Hooks --> Board
-    Store <--> Board
-    Board <--> Cmp
-  end
+  Org -->|"HTTPS<br/>Bearer token"| Dev
+  Dev -->|"fetch<br/>localhost:5173"| Browser
 
-  GraphQL <-. "Bearer token<br/>(rawInstanceUrl)" .-> Plugin
-  Plugin <-. "fetch to localhost:5173" .-> SDK
-
-  classDef sf fill:#dbeafe,stroke:#1d4ed8,color:#0b1d4d
-  classDef proxy fill:#fef3c7,stroke:#b45309,color:#3c2c00
-  classDef browser fill:#dcfce7,stroke:#166534,color:#0c2d18
-  class SF,Opportunity,Picklist,GraphQL sf
-  class Proxy,Vite,Plugin proxy
-  class Browser,SDK,Hooks,Store,Board,Cmp browser
+  classDef tier fill:#fbfaf6,stroke:#1a1a1a,stroke-width:1.5px,color:#1a1a1a
+  class Org,Dev,Browser tier
 ```
 
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) has four more sequence
-diagrams (initial load, drag-and-drop with rollback, inline edit,
-filter / forecast) plus the load-bearing design decisions — manual
-types vs codegen, client-side filtering, where the optimistic update
-lives, why zustand for one piece of state.
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) zooms in on the browser
+tier and adds four sequence diagrams (initial load, drag-and-drop with
+rollback, inline edit, filter / forecast) plus the load-bearing design
+decisions — manual types vs codegen, client-side filtering, where the
+optimistic update lives, why zustand for one piece of state.
 
 ## Walking through the code
 
