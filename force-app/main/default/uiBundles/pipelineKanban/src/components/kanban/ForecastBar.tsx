@@ -4,6 +4,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { StageFunnel } from '@/components/forecast/StageFunnel';
 import { stageMeta } from '@/lib/stageMeta';
 import type { Opportunity, Stage } from '@/types/opportunity';
 import { formatCurrency } from '@/utils/format';
@@ -11,6 +12,8 @@ import { formatCurrency } from '@/utils/format';
 export interface ForecastBarProps {
   opportunities: Opportunity[];
   stages: Stage[];
+  /** Forwarded to StageFunnel — KanbanBoard scrolls the column into view. */
+  onStageClick?: (stageName: string) => void;
 }
 
 /**
@@ -23,7 +26,11 @@ export interface ForecastBarProps {
  * "Show breakdown" trigger. Default view is three numbers; details
  * are an explicit click.
  */
-export function ForecastBar({ opportunities, stages }: ForecastBarProps) {
+export function ForecastBar({
+  opportunities,
+  stages,
+  onStageClick,
+}: ForecastBarProps) {
   const summary = useMemo(() => {
     let totalAmount = 0;
     let weightedTotal = 0;
@@ -75,6 +82,17 @@ export function ForecastBar({ opportunities, stages }: ForecastBarProps) {
         <Sep />
         <Cell label="Deals" value={String(opportunities.length)} />
       </dl>
+
+      {/* Funnel slot — sits between the aggregates and the breakdown
+          trigger at viewports ≥ 1280px (xl: in Tailwind). Hides on
+          narrower screens so the text values + popover keep working. */}
+      <div className="ml-4 mr-auto hidden xl:block">
+        <StageFunnel
+          opportunities={opportunities}
+          stages={stages}
+          onStageClick={onStageClick}
+        />
+      </div>
 
       <Popover>
         <PopoverTrigger className="text-[12px] text-ink-muted hover:text-ink hover:underline focus-visible:outline-none focus-visible:underline">

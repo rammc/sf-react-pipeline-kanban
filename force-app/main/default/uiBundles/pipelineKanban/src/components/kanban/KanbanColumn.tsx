@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { stageMeta } from '@/lib/stageMeta';
 import type { Opportunity, Stage } from '@/types/opportunity';
@@ -10,6 +11,10 @@ export interface KanbanColumnProps {
   /** ID of the card currently being dragged, if any. */
   draggingId: string | null;
   onUpdateAmount: (id: string, next: number) => Promise<void>;
+  /** True for ~1.5s after the funnel chart focuses this column. */
+  focused?: boolean;
+  /** Parent registers the section node here so it can scrollIntoView. */
+  registerRef?: (node: HTMLElement | null) => void;
 }
 
 export function KanbanColumn({
@@ -17,8 +22,19 @@ export function KanbanColumn({
   opportunities,
   draggingId,
   onUpdateAmount,
+  focused,
+  registerRef,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value });
+
+  // dnd-kit and the parent both want the same node; combine.
+  const setRef = useCallback(
+    (node: HTMLElement | null) => {
+      setNodeRef(node);
+      registerRef?.(node);
+    },
+    [setNodeRef, registerRef]
+  );
 
   // Suppress the highlight when the drag started inside this column —
   // dropping back where you came from is a no-op.
@@ -36,14 +52,22 @@ export function KanbanColumn({
 
   return (
     <section
-      ref={setNodeRef}
+      ref={setRef}
       data-drop-active={showDropHighlight ? 'true' : undefined}
+      data-focused={focused ? 'true' : undefined}
       className="flex w-72 shrink-0 flex-col transition-colors data-[drop-active=true]:bg-card-edge/40"
       aria-label={`Stage column ${stage.label}`}
     >
       <header
         className="flex items-baseline justify-between pb-1.5"
-        style={{ borderBottom: `2px solid ${accent}` }}
+        style={{
+          borderBottom: `2px solid ${accent}`,
+          // 20% of the stage accent washes the header on focus, then
+          // CSS transitions back to transparent — `setTimeout` in
+          // KanbanBoard clears `focused` after 1500ms.
+          backgroundColor: focused ? `${accent}33` : 'transparent',
+          transition: 'background-color 1000ms ease-out',
+        }}
       >
         <div className="flex items-baseline gap-2">
           <h2 className="text-[13px] font-medium text-ink">{stage.label}</h2>

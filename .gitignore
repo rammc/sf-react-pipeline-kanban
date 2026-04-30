@@ -46,3 +46,8 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Vite build artefacts inside the UI bundle
+**/dist/
+**/build/
+**/tsconfig.tsbuildinfo

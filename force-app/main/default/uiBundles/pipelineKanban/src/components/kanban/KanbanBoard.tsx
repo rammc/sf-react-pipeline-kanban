@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -65,10 +65,37 @@ export function KanbanBoard() {
 
   const [localOpps, setLocalOpps] = useState<Opportunity[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [focusedStage, setFocusedStage] = useState<string | null>(null);
+  const columnRefs = useRef<Map<string, HTMLElement | null>>(new Map());
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setLocalOpps(opportunities);
   }, [opportunities]);
+
+  useEffect(() => {
+    return () => {
+      if (focusTimer.current) clearTimeout(focusTimer.current);
+    };
+  }, []);
+
+  /**
+   * Click target from the funnel chart — scroll the matching column
+   * into the centre of the board's horizontal scroll area, then
+   * flash its header background for 1.5s. Pure UX glue, no business
+   * logic.
+   */
+  const focusColumn = useCallback((stageName: string) => {
+    const node = columnRefs.current.get(stageName);
+    if (node) {
+      node.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+    setFocusedStage(stageName);
+    if (focusTimer.current) clearTimeout(focusTimer.current);
+    focusTimer.current = setTimeout(() => {
+      setFocusedStage(prev => (prev === stageName ? null : prev));
+    }, 1500);
+  }, []);
 
   const visibleOpps = useMemo(() => {
     return localOpps.filter(o => {
@@ -169,7 +196,11 @@ export function KanbanBoard() {
           consuming the vertical viewport. */}
       <div className="flex h-[calc(100vh-4rem)] flex-col">
         <FilterBar opportunities={localOpps} />
-        <ForecastBar opportunities={visibleOpps} stages={stages} />
+        <ForecastBar
+          opportunities={visibleOpps}
+          stages={stages}
+          onStageClick={focusColumn}
+        />
         <main
           className="flex min-h-0 flex-1 gap-4 overflow-x-auto px-6 py-4"
           aria-label="Pipeline board"
@@ -187,6 +218,8 @@ export function KanbanBoard() {
                 opportunities={grouped.get(stage.value) ?? []}
                 draggingId={activeId}
                 onUpdateAmount={handleUpdateAmount}
+                focused={focusedStage === stage.value}
+                registerRef={node => columnRefs.current.set(stage.value, node)}
               />
             </Fragment>
           ))}

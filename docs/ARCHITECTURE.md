@@ -280,6 +280,18 @@ would have cost more than it saved. A single `/` route renders
 KanbanBoard. Adding `/opportunity/:id` is a stretch goal —
 see `docs/TEACHING-NOTES.md`.
 
+## Visualisation as workflow navigation
+
+The funnel chart in the ForecastBar is intentionally tiny — 140×32 px,
+six segments, no axes. Its purpose is not analytics; the breakdown
+popover already covers that. Its purpose is **shape at a glance** and,
+critically, **navigation**: clicking a segment scrolls the matching
+column into view and flashes its header. A chart inside a workflow
+app should do this by default — if it can't be acted on, it's
+decoration. The design rule that follows: every visual element on the
+board either changes server state, navigates the user, or makes the
+data legible. None of them are there to look like a dashboard.
+
 ## What this repo intentionally does not show
 
 - A second route. Adding one is the recommended exercise.
