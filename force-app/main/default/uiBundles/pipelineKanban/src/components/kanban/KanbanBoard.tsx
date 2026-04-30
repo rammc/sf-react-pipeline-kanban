@@ -207,12 +207,22 @@ export function KanbanBoard() {
           consuming the vertical viewport. */}
       <div className="flex h-[calc(100vh-4rem)] flex-col">
         <FilterBar opportunities={localOpps} />
-        <CloseDateHeatmap opportunities={ownerFilteredOpps} />
-        <ForecastBar
-          opportunities={visibleOpps}
-          stages={stages}
-          onStageClick={focusColumn}
-        />
+        {/* ForecastBar (flex-grow) + Heatmap (fixed width) on one
+            row. The wrapper carries the surface + bottom border so
+            the two children read as a single companion strip rather
+            than as two stacked panels with mismatched heights. */}
+        <div className="flex flex-wrap items-start border-b border-card-edge bg-surface-card">
+          <ForecastBar
+            opportunities={visibleOpps}
+            stages={stages}
+            onStageClick={focusColumn}
+          />
+          <div
+            aria-hidden
+            className="my-3 hidden w-px self-stretch bg-card-edge md:block"
+          />
+          <CloseDateHeatmap opportunities={ownerFilteredOpps} />
+        </div>
         <main
           className="flex min-h-0 flex-1 gap-4 overflow-x-auto px-6 py-4"
           aria-label="Pipeline board"

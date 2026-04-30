@@ -72,7 +72,7 @@ export function ForecastBar({
 
   return (
     <div
-      className="flex h-12 items-center justify-between border-b border-card-edge bg-surface-card px-6"
+      className="flex h-12 flex-1 min-w-0 items-center justify-between px-6"
       aria-label="Forecast summary"
     >
       <dl className="flex items-center gap-x-4 text-[14px]">

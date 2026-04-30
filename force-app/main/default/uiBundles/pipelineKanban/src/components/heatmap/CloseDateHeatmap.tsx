@@ -12,8 +12,8 @@ export interface CloseDateHeatmapProps {
 }
 
 const WEEKS = 12;
-const CELL_W = 22;
-const CELL_H = 16;
+const CELL_W = 18;
+const CELL_H = 14;
 const GAP = 2;
 const RADIUS = 2;
 const WEEKDAY_LABEL_H = 14;
@@ -101,7 +101,7 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
 
   return (
     <section
-      className="relative border-b border-card-edge bg-surface-card px-6 py-2"
+      className="relative shrink-0 px-3 py-2"
       onMouseLeave={() => setHover(null)}
       aria-label="Close-date heatmap, next 12 weeks"
     >
@@ -119,7 +119,7 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
         >
           ›
         </span>
-        Closes in next 12 weeks
+        Closes · 12 weeks
       </button>
 
       {!expanded ? null : (
