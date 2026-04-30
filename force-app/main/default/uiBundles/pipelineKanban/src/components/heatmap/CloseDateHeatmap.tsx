@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { bucketByDay, getWeekGrid, isoDay } from '@/lib/dateBuckets';
 import { useFilterStore } from '@/store/filterStore';
 import type { Opportunity } from '@/types/opportunity';
+
+const STORAGE_KEY = 'pipeline-kanban:heatmap-expanded';
 
 export interface CloseDateHeatmapProps {
   /** Owner-filtered opportunities. The heatmap drives the close-date
@@ -57,6 +59,28 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
 
   const [hover, setHover] = useState<HoverState | null>(null);
 
+  // Expanded by default. Persisted to localStorage so the choice
+  // survives reloads — the heatmap is informational, not central,
+  // and a sales manager who's hidden it once shouldn't have to
+  // hide it on every page load. Wrapped in try/catch because some
+  // sandboxed contexts (and jsdom under fake timers) leave the API
+  // shaped wrong.
+  const [expanded, setExpanded] = useState<boolean>(() => {
+    try {
+      const stored = window.localStorage?.getItem?.(STORAGE_KEY);
+      return stored === null || stored === undefined ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage?.setItem?.(STORAGE_KEY, String(expanded));
+    } catch {
+      /* ignore */
+    }
+  }, [expanded]);
+
   // Currently-selected single day, if the filter is set to one day.
   const selectedDay =
     closeDateFrom && closeDateFrom === closeDateTo ? closeDateFrom : null;
@@ -77,14 +101,29 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
 
   return (
     <section
-      className="relative px-6 py-3"
+      className="relative border-b border-card-edge bg-surface-card px-6 py-2"
       onMouseLeave={() => setHover(null)}
       aria-label="Close-date heatmap, next 12 weeks"
     >
-      <p className="mb-1.5 text-[11px] text-ink-muted">
+      <button
+        type="button"
+        onClick={() => setExpanded(prev => !prev)}
+        aria-expanded={expanded}
+        aria-controls="heatmap-grid"
+        className="flex items-center gap-1.5 text-[11px] text-ink-muted hover:text-ink focus-visible:outline-none focus-visible:underline"
+      >
+        <span
+          aria-hidden
+          className="inline-block transition-transform duration-150"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          ›
+        </span>
         Closes in next 12 weeks
-      </p>
+      </button>
 
+      {!expanded ? null : (
+      <div id="heatmap-grid" className="mt-1.5">
       <svg
         width={totalWidth}
         height={totalHeight}
@@ -170,6 +209,8 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
         >
           {formatTooltip(hover.date, hover.count)}
         </div>
+      )}
+      </div>
       )}
     </section>
   );
