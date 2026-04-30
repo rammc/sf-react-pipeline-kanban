@@ -22,7 +22,19 @@ function readInitial(): Theme {
 
 function applyTheme(theme: Theme) {
   if (typeof document === 'undefined') return;
-  document.documentElement.setAttribute('data-theme', theme);
+  const html = document.documentElement;
+  html.setAttribute('data-theme', theme);
+  // Shadcn primitives (Popover, Sonner toast, etc.) read their own
+  // dark palette under the `.dark` class. Mirror our theme onto that
+  // class so primitive surfaces follow when the user picks dark or
+  // retro. Our [data-theme] blocks already redefine --background,
+  // --card, etc. to our tokens — toggling .dark just makes shadcn's
+  // own .dark block stop fighting our values.
+  if (theme === 'dark' || theme === 'retro') {
+    html.classList.add('dark');
+  } else {
+    html.classList.remove('dark');
+  }
 }
 
 // Synchronous side effect at module load: set the data-theme
