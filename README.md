@@ -1,8 +1,10 @@
-# Pipeline Kanban — React on Salesforce Multi-Framework
+# Pipeline Kanban: React on Salesforce Multi-Framework
+
+[![CI](https://github.com/rammc/sf-react-pipeline-kanban/actions/workflows/ci.yml/badge.svg)](https://github.com/rammc/sf-react-pipeline-kanban/actions/workflows/ci.yml)
 
 A small, MIT-licensed teaching repository that shows what React on
 the Salesforce Platform actually buys you compared to Lightning Web
-Components — using a single, focused use case: an interactive Sales
+Components, using a single focused use case: an interactive Sales
 Pipeline Kanban board with optimistic drag-and-drop, a weighted
 forecast sidebar, and inline edit on Amount.
 
@@ -11,7 +13,7 @@ and **not** a full sample app (see the Property Management Multi-Framework App).
 It sits between: one app, one user story, every relevant Multi-Framework
 pattern touched exactly once.
 
-> **Target reader:** A Salesforce developer with 1–2 years of LWC
+> **Target reader:** A Salesforce developer with 1-2 years of LWC
 > experience who has never written a React app on the platform. Reads
 > end-to-end in 30 minutes; walks away knowing when and how to reach
 > for Multi-Framework.
@@ -28,11 +30,11 @@ overhead first.
 ## Beta caveats
 
 - Multi-Framework is in **open beta** (Spring '26). Scratch orgs and
-  sandboxes only — production deployment is not supported.
+  sandboxes only. Production deployment is not supported.
 - Org default language must be English.
 - The CLI plugin `@salesforce/plugin-ui-bundle-dev` is required for
   the local dev server.
-- A handful of beta-template quirks are worked around in this repo —
+- A handful of beta-template quirks are worked around in this repo:
   tsconfig path mappings, a duplicate Vitest config, and (where
   applicable) `patch-package` patches against `@salesforce/ui-bundle`.
   See [`docs/SETUP.md`](docs/SETUP.md#known-beta-template-issues)
@@ -41,7 +43,7 @@ overhead first.
 - App Launcher integration via UIBundle-pointing tabs and
   CustomApplications is **not** in this repo. The metadata schemas
   haven't stabilised in the beta. The primary run path is the local
-  dev server with a GraphQL proxy to your org — see Setup below.
+  dev server with a GraphQL proxy to your org (see Setup below).
 
 ## Setup
 
@@ -61,7 +63,7 @@ cd ../../../../..
 sf project deploy start --source-dir force-app/main/default/permissionsets --target-org <alias>
 sf org assign permset --name PipelineKanban_App --target-org <alias>
 
-# 3. Seed demo data (idempotent — safe to re-run)
+# 3. Seed demo data (idempotent, safe to re-run)
 sf apex run --file scripts/seed-opportunities.apex --target-org <alias>
 
 # 4. Start the dev server
@@ -92,11 +94,13 @@ flowchart LR
   class Org,Dev,Browser tier
 ```
 
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) zooms in on the browser
-tier and adds four sequence diagrams (initial load, drag-and-drop with
-rollback, inline edit, filter / forecast) plus the load-bearing design
-decisions — manual types vs codegen, client-side filtering, where the
-optimistic update lives, why zustand for one piece of state.
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) zooms into the browser
+tier with its own flowchart, adds four sequence diagrams (initial
+load, drag-and-drop with rollback, inline edit, filter / forecast),
+covers the visualization patterns from Phases 7 and 8 ("Visualisation
+as workflow navigation"), and the load-bearing design decisions:
+manual types vs codegen, client-side filtering, where the optimistic
+update lives, why zustand for one piece of state.
 
 ## Walking through the code
 
@@ -112,6 +116,8 @@ state, and only adds what that phase teaches:
 | 4     | `feat: drag-and-drop stage updates with optimistic UI`                      | dnd-kit + `DragOverlay`, optimistic state in `KanbanBoard`, sonner toast on rollback                     |
 | 5     | `feat: filters, weighted forecast, and inline amount edit`                  | zustand filter store, `ForecastSidebar`, `react-hook-form`-driven inline edit                            |
 | 6     | `docs: README, architecture notes, and teaching guide`                      | Tests, error boundary, CI, the full doc set                                                              |
+| 7     | `feat: stage funnel chart in forecast bar`                                  | Recharts integration, click-to-filter funnel as embedded visualisation                                   |
+| 8     | `feat: close-date heatmap calendar with click-to-filter`                    | Custom SVG heatmap (no chart library), owner-aware filtering, collapsible. Contrast pattern to Phase 7   |
 
 `git log --oneline` and `git show <hash>` will tell you exactly what
 each step touched.
@@ -132,12 +138,12 @@ each step touched.
 ## Further reading
 
 - [Multi-Framework Beta documentation](https://developer.salesforce.com/docs/platform/multi-framework/) (Salesforce)
-- [`trailheadapps/multiframework-recipes`](https://github.com/trailheadapps/multiframework-recipes) — pattern-by-pattern recipes (a step beyond this repo)
-- [Property Management Multi-Framework App](https://github.com/trailheadapps) — a full sample app (the next step beyond recipes)
+- [`trailheadapps/multiframework-recipes`](https://github.com/trailheadapps/multiframework-recipes): pattern-by-pattern recipes (a step beyond this repo)
+- [Property Management Multi-Framework App](https://github.com/trailheadapps): a full sample app (the next step beyond recipes)
 
 ## License & contributing
 
-[MIT](LICENSE). Issues and PRs welcome — there's a deliberately short
+[MIT](LICENSE). Issues and PRs welcome. There's a deliberately short
 `.github/ISSUE_TEMPLATE/` set for bug reports, feature requests, and
 plain questions. The repo is small enough that a real review fits in
 one pass; please keep PRs scoped that way.
