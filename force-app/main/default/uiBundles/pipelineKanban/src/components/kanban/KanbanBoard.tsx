@@ -211,7 +211,7 @@ export function KanbanBoard() {
             row. The wrapper carries the surface + bottom border so
             the two children read as a single companion strip rather
             than as two stacked panels with mismatched heights. */}
-        <div className="flex flex-wrap items-start border-b border-card-edge bg-surface-card">
+        <div className="flex flex-wrap items-stretch border-b border-card-edge bg-surface-card">
           <ForecastBar
             opportunities={visibleOpps}
             stages={stages}

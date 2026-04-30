@@ -85,8 +85,10 @@ export function ForecastBar({
 
       {/* Funnel slot — sits between the aggregates and the breakdown
           trigger at viewports ≥ 1280px (xl: in Tailwind). Hides on
-          narrower screens so the text values + popover keep working. */}
-      <div className="ml-4 mr-auto hidden xl:block">
+          narrower screens so the text values + popover keep working.
+          The parent's justify-between handles distribution; no need
+          for a redundant `mr-auto` on this slot. */}
+      <div className="ml-4 hidden xl:block">
         <StageFunnel
           opportunities={opportunities}
           stages={stages}
