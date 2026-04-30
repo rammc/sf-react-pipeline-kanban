@@ -171,9 +171,20 @@ export function useOpportunityDetail(id: string): UseOpportunityDetailResult {
               : new Error(String(activityRes.reason))
           );
         } else {
-          setActivity(
-            activityRes.value.uiapi.query.Task.edges.map(e => flattenActivity(e.node))
+          // Sort newest first. The GraphQL UI API doesn't expose a
+          // stable orderBy for Task in our verified surface, so we
+          // sort client-side. Tasks without an ActivityDate sink to
+          // the bottom.
+          const items = activityRes.value.uiapi.query.Task.edges.map(e =>
+            flattenActivity(e.node)
           );
+          items.sort((a, b) => {
+            if (!a.ActivityDate && !b.ActivityDate) return 0;
+            if (!a.ActivityDate) return 1;
+            if (!b.ActivityDate) return -1;
+            return b.ActivityDate.localeCompare(a.ActivityDate);
+          });
+          setActivity(items);
         }
       } finally {
         if (!cancelled) setLoading(false);

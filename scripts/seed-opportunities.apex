@@ -13,16 +13,26 @@
  * the org actually has, Amount between 10k and 500k, CloseDate spread
  * over the next 90 days. Every record is owned by the running user
  * so Owner.SmallPhotoUrl resolves (User-owned, not Queue-owned).
+ *
+ * Also creates 2-4 completed Tasks per Opportunity so the detail-view
+ * activity section renders with real data instead of the empty state.
  */
 
 // 1. Cleanup — scoped to the demo Account so we never touch
 //    unrelated data, even if a real Opportunity happens to share a
-//    company name with our seed list.
+//    company name with our seed list. Tasks must go before their
+//    parent Opportunity so we don't leave orphans behind.
 List<Account> demoAccounts = [
   SELECT Id FROM Account WHERE Name = 'Pipeline Kanban Demo Co.'
 ];
 if (!demoAccounts.isEmpty()) {
-  delete [SELECT Id FROM Opportunity WHERE AccountId IN :demoAccounts];
+  List<Opportunity> oldOpps = [
+    SELECT Id FROM Opportunity WHERE AccountId IN :demoAccounts
+  ];
+  if (!oldOpps.isEmpty()) {
+    delete [SELECT Id FROM Task WHERE WhatId IN :oldOpps];
+    delete oldOpps;
+  }
   delete demoAccounts;
 }
 
@@ -76,6 +86,49 @@ for (Integer i = 0; i < companies.size(); i++) {
 }
 insert opps;
 
+// 5. Seed Tasks (activity history) — 2-4 per Opportunity, each
+//    linked via WhatId. Subjects rotate through a list of common
+//    sales activities; ActivityDate spreads back over the past 60
+//    days so the activity feed reads as recent history. All
+//    completed so the detail view shows them as past activity.
+List<String> taskSubjects = new List<String>{
+  'Discovery call held',
+  'Sent proposal v1',
+  'Sent proposal v2',
+  'Stakeholder meeting',
+  'Pricing discussion',
+  'Demo scheduled',
+  'Contract review with legal',
+  'Follow-up on objections',
+  'Procurement intro call',
+  'Reference customer call',
+  'Technical deep-dive',
+  'Quote revision sent'
+};
+
+List<Task> tasks = new List<Task>();
+for (Integer i = 0; i < opps.size(); i++) {
+  Opportunity opp = opps[i];
+  Integer taskCount = Math.mod(i, 3) + 2; // 2..4
+  for (Integer j = 0; j < taskCount; j++) {
+    String subject = taskSubjects[
+      Math.mod(i * 7 + j * 3, taskSubjects.size())
+    ];
+    Date activityDate = Date.today().addDays(-Math.mod(i + j * 5, 60));
+    tasks.add(new Task(
+      Subject      = subject,
+      WhatId       = opp.Id,
+      ActivityDate = activityDate,
+      Description  = 'Seeded by Pipeline Kanban demo',
+      OwnerId      = UserInfo.getUserId(),
+      Status       = 'Completed',
+      Priority     = 'Normal'
+    ));
+  }
+}
+insert tasks;
+
 System.debug(
-  'Inserted ' + opps.size() + ' demo Opportunities owned by ' + UserInfo.getName()
+  'Inserted ' + opps.size() + ' demo Opportunities and ' +
+  tasks.size() + ' related Tasks owned by ' + UserInfo.getName()
 );
