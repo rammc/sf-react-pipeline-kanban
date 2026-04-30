@@ -103,7 +103,7 @@ export function StageFunnel({
               isAnimationActive={false}
               onClick={onStageClick ? () => onStageClick(seg.stage.value) : undefined}
               cursor={onStageClick ? 'pointer' : 'default'}
-              activeBar={{ stroke: '#1a1a1a', strokeWidth: 1.5 }}
+              activeBar={{ stroke: 'var(--ink)', strokeWidth: 1.5 }}
             >
               <Cell
                 fill={seg.accent}

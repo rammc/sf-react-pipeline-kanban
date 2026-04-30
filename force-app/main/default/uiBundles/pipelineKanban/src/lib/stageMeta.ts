@@ -30,30 +30,42 @@ export interface StageMeta {
   probability: number;
 }
 
+// Phase 10: accent values reference CSS variables instead of literal
+// hex strings. The browser resolves `var(--accent-stage-X)` when the
+// string is fed into an inline `style` or an SVG `fill` attribute,
+// so call sites need no change. Theme switches (light → dark → retro)
+// now propagate to every accent without touching this file.
+const QUALIFICATION = 'var(--accent-stage-qualification)';
+const DISCOVERY = 'var(--accent-stage-discovery)';
+const PROPOSAL = 'var(--accent-stage-proposal)';
+const NEGOTIATION = 'var(--accent-stage-negotiation)';
+const CLOSED_WON = 'var(--accent-stage-closed-won)';
+const CLOSED_LOST = 'var(--accent-stage-closed-lost)';
+
 export const FALLBACK_META: StageMeta = {
-  accent: '#8a8a85',
+  accent: CLOSED_LOST, // neutral grey across themes
   category: 'open',
   probability: 50,
 };
 
 const STAGE_META: Record<string, StageMeta> = {
   // Standard Sales Cloud open stages
-  Prospecting:           { accent: '#7a8a6f', category: 'open',   probability: 10 },
-  Qualification:         { accent: '#7a8a6f', category: 'open',   probability: 10 },
-  Discovery:             { accent: '#5b7a8a', category: 'open',   probability: 20 },
-  'Needs Analysis':      { accent: '#5b7a8a', category: 'open',   probability: 20 },
-  'Value Proposition':   { accent: '#5b7a8a', category: 'open',   probability: 50 },
-  'Id. Decision Makers': { accent: '#5b7a8a', category: 'open',   probability: 60 },
-  'Perception Analysis': { accent: '#b8854a', category: 'open',   probability: 70 },
-  'Proposal/Quote':      { accent: '#b8854a', category: 'open',   probability: 75 },
-  'Proposal/Price Quote':{ accent: '#b8854a', category: 'open',   probability: 75 },
-  Quotation:             { accent: '#b8854a', category: 'open',   probability: 75 },
-  Negotiation:           { accent: '#a85d3e', category: 'open',   probability: 90 },
-  'Negotiation/Review':  { accent: '#a85d3e', category: 'open',   probability: 90 },
+  Prospecting:           { accent: QUALIFICATION, category: 'open',   probability: 10 },
+  Qualification:         { accent: QUALIFICATION, category: 'open',   probability: 10 },
+  Discovery:             { accent: DISCOVERY,     category: 'open',   probability: 20 },
+  'Needs Analysis':      { accent: DISCOVERY,     category: 'open',   probability: 20 },
+  'Value Proposition':   { accent: DISCOVERY,     category: 'open',   probability: 50 },
+  'Id. Decision Makers': { accent: DISCOVERY,     category: 'open',   probability: 60 },
+  'Perception Analysis': { accent: PROPOSAL,      category: 'open',   probability: 70 },
+  'Proposal/Quote':      { accent: PROPOSAL,      category: 'open',   probability: 75 },
+  'Proposal/Price Quote':{ accent: PROPOSAL,      category: 'open',   probability: 75 },
+  Quotation:             { accent: PROPOSAL,      category: 'open',   probability: 75 },
+  Negotiation:           { accent: NEGOTIATION,   category: 'open',   probability: 90 },
+  'Negotiation/Review':  { accent: NEGOTIATION,   category: 'open',   probability: 90 },
 
   // Closed (archived) stages
-  'Closed Won':          { accent: '#3e5a3e', category: 'closed', probability: 100 },
-  'Closed Lost':         { accent: '#8a8a85', category: 'closed', probability: 0 },
+  'Closed Won':          { accent: CLOSED_WON,    category: 'closed', probability: 100 },
+  'Closed Lost':         { accent: CLOSED_LOST,   category: 'closed', probability: 0 },
 };
 
 export function stageMeta(stageName: string): StageMeta {

@@ -97,6 +97,30 @@ worth re-checking if the chart count grows beyond two or three. If
 the bundle ever needs to shrink, dynamic-import the funnel — it's
 not used on first paint until the data loads.
 
+### CSS variables + Tailwind tokens (Phase 10) — theming as architecture
+
+Theming on Multi-Framework apps is a token-architecture choice, not
+a CSS choice. The repo defines ~25 design tokens as CSS variables on
+`:root` and `[data-theme=...]` blocks, exposes them through Tailwind
+v4's `@theme` block (the `--color-X: var(--X)` indirection), and
+switches between three themes (Light, Dark, Retro Terminal) by
+flipping one DOM attribute.
+
+No theming library needed at this scale. `next-themes`, `theme-ui`,
+and friends solve persistence and SSR concerns we don't have. Two
+layers of CSS variables solve the actual problem: utilities point at
+swappable indirection variables, themes redefine those variables.
+
+The Retro Terminal mode is the architecture's stress test, not the
+architecture's purpose. Phosphor green on near-black, `--font-sans`
+rebound to the mono family, scanline overlay via `body::before`. If
+the token system survives Retro cleanly, it survives any customer
+brand theme that comes up in real client work.
+
+If a customer brand theme is required later, it's another
+`[data-theme="brand-x"]` block, not a refactor. Components stay
+agnostic.
+
 ### Custom SVG (Phase 8) — when the library gets in the way
 
 Phase 7 shows when a chart library helps. Phase 8 shows when it gets

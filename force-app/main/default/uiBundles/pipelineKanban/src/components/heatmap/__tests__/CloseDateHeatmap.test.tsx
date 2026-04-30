@@ -68,7 +68,7 @@ describe('CloseDateHeatmap', () => {
     });
     const { container } = render(<CloseDateHeatmap opportunities={[]} />);
     const rects = container.querySelectorAll('svg rect');
-    expect(rects[2]).toHaveAttribute('stroke', '#1a1a1a');
+    expect(rects[2]).toHaveAttribute('stroke', 'var(--ink)');
     expect(rects[0]).toHaveAttribute('stroke', 'transparent');
   });
 
@@ -86,8 +86,10 @@ describe('CloseDateHeatmap', () => {
       />
     );
     const rects = container.querySelectorAll('svg rect');
-    expect(rects[0]).toHaveAttribute('fill', '#e8e2d2'); // 1 deal
-    expect(rects[1]).toHaveAttribute('fill', '#a85d3e'); // 5 deals → max
-    expect(rects[3]).toHaveAttribute('fill', '#f5f3ec'); // 0 deals
+    // Phase 10: cells now carry CSS-var references that resolve
+    // per theme. The semantic step is what matters, not the hue.
+    expect(rects[0]).toHaveAttribute('fill', 'var(--heatmap-step-1)');
+    expect(rects[1]).toHaveAttribute('fill', 'var(--heatmap-step-5)');
+    expect(rects[3]).toHaveAttribute('fill', 'var(--heatmap-step-0)');
   });
 });

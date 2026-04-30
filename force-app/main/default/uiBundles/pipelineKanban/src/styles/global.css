@@ -5,23 +5,175 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Visual refinement pass — tokens. surface-* for backgrounds,
-   card-edge for card borders, ink-* for text. Adopted across the
-   kanban components in place of raw hex; shadcn primitives keep
-   their own tokens (--card, --foreground, …) untouched. */
+/* Phase 10 — token architecture for theming.
+ *
+ * Two layers:
+ * 1. The @theme block binds Tailwind utility classes (bg-surface-card,
+ *    text-ink, border-card-edge, …) to indirection variables
+ *    (--surface-card, --ink, --card-edge, …).
+ * 2. The :root / [data-theme] blocks set those indirection variables
+ *    to concrete values per theme. Component code references only
+ *    Tailwind utilities or `var(--token)`; never raw hex.
+ *
+ * Stage accents and heatmap density steps are CSS variables only
+ * (no Tailwind binding) because they're applied via inline `style`
+ * or SVG `fill`, where the var() string resolves directly.
+ *
+ * Shadcn primitives (--card, --foreground, …) keep their own
+ * @theme inline + :root / .dark blocks below; this layer is parallel
+ * and untouched.
+ */
 @theme {
-  --font-sans: 'Geist', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  /* Fonts also swap per theme (Retro routes sans → mono), so the
+     Tailwind utilities point at indirection variables. */
+  --font-sans: var(--font-sans-active);
+  --font-mono: var(--font-mono-active);
 
-  --color-surface-app: #f5f3ec;
-  --color-surface-card: #fbfaf6;
+  --color-surface-app: var(--surface-app);
+  --color-surface-card: var(--surface-card);
+  --color-surface-archived: var(--surface-archived);
 
-  --color-card-edge: #e8e6df;
-  --color-card-edge-hover: #c8c4b8;
+  --color-card-edge: var(--card-edge);
+  --color-card-edge-hover: var(--card-edge-hover);
+  --color-avatar-edge: var(--avatar-edge);
 
-  --color-ink: #1a1a1a;
-  --color-ink-muted: #7a7770;
-  --color-ink-subtle: #8a8a85;
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-archived: var(--ink-archived);
+  --color-ink-archived-muted: var(--ink-archived-muted);
+
+  --color-accent-warning: var(--accent-warning);
+}
+
+:root,
+[data-theme='light'] {
+  --font-sans-active: 'Geist', system-ui, sans-serif;
+  --font-mono-active: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --surface-app: #f5f3ec;
+  --surface-card: #fbfaf6;
+  --surface-archived: #f3f1e9;
+
+  --card-edge: #e8e6df;
+  --card-edge-hover: #c8c4b8;
+  --avatar-edge: #d8d4c8;
+
+  --ink: #1a1a1a;
+  --ink-muted: #7a7770;
+  --ink-subtle: #8a8a85;
+  --ink-archived: #3a3a3a;
+  --ink-archived-muted: #8a8780;
+
+  --accent-warning: #a85d3e;
+
+  --accent-stage-qualification: #7a8a6f;
+  --accent-stage-discovery: #5b7a8a;
+  --accent-stage-proposal: #b8854a;
+  --accent-stage-negotiation: #a85d3e;
+  --accent-stage-closed-won: #3e5a3e;
+  --accent-stage-closed-lost: #8a8a85;
+
+  --heatmap-step-0: #f5f3ec;
+  --heatmap-step-1: #e8e2d2;
+  --heatmap-step-2: #d8c8a8;
+  --heatmap-step-3: #c4a878;
+  --heatmap-step-4: #b8854a;
+  --heatmap-step-5: #a85d3e;
+}
+
+[data-theme='dark'] {
+  --font-sans-active: 'Geist', system-ui, sans-serif;
+  --font-mono-active: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --surface-app: #15140f;
+  --surface-card: #1d1c16;
+  --surface-archived: #1a1914;
+
+  --card-edge: #2e2c25;
+  --card-edge-hover: #48453c;
+  --avatar-edge: #3a382f;
+
+  --ink: #e8e4d8;
+  --ink-muted: #a09c90;
+  --ink-subtle: #7a7770;
+  --ink-archived: #c8c4b8;
+  --ink-archived-muted: #6a6760;
+
+  --accent-warning: #c87852;
+
+  --accent-stage-qualification: #9aab8d;
+  --accent-stage-discovery: #7d9ba8;
+  --accent-stage-proposal: #d0a06a;
+  --accent-stage-negotiation: #c87852;
+  --accent-stage-closed-won: #6a8a6a;
+  --accent-stage-closed-lost: #8a8a85;
+
+  /* Heatmap ramp on dark: dark cream base, escalates to amber.
+     Step-0 matches surface-app so empty cells "disappear" into the
+     background like they do in light mode. */
+  --heatmap-step-0: #15140f;
+  --heatmap-step-1: #2a2620;
+  --heatmap-step-2: #4a3f2a;
+  --heatmap-step-3: #6a5435;
+  --heatmap-step-4: #9a6a3a;
+  --heatmap-step-5: #c87852;
+}
+
+[data-theme='retro'] {
+  /* Retro: sans-serif points at mono. Everything is monospace. */
+  --font-sans-active: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-mono-active: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --surface-app: #0a0e0a;
+  --surface-card: #0e1410;
+  --surface-archived: #0c1010;
+
+  --card-edge: #1f3220;
+  --card-edge-hover: #2c4a2e;
+  --avatar-edge: #2c4a2e;
+
+  --ink: #7fff7f;
+  --ink-muted: #3fa03f;
+  --ink-subtle: #2a702a;
+  --ink-archived: #5fdf5f;
+  --ink-archived-muted: #2a702a;
+
+  --accent-warning: #ffaa3f; /* amber, classic CRT alarm */
+
+  --accent-stage-qualification: #5fdf5f;
+  --accent-stage-discovery: #5fdfdf;
+  --accent-stage-proposal: #ffaa3f;
+  --accent-stage-negotiation: #ff5f5f;
+  --accent-stage-closed-won: #7fff7f;
+  --accent-stage-closed-lost: #5f5f5f;
+
+  /* Heatmap ramp in phosphor: dim phosphor → bright phosphor → amber.
+     The escalation reads as "this day is heating up on the CRT". */
+  --heatmap-step-0: #0a0e0a;
+  --heatmap-step-1: #1a3a1a;
+  --heatmap-step-2: #2a702a;
+  --heatmap-step-3: #3fa03f;
+  --heatmap-step-4: #5fdf5f;
+  --heatmap-step-5: #ffaa3f;
+}
+
+/* Retro-only scanline overlay. Static, no animation, low opacity —
+   the CRT signature without the headache. */
+[data-theme='retro'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 3px
+  );
 }
 
 @layer base {
@@ -35,6 +187,10 @@
     @apply antialiased font-sans text-[14px];
     background-color: var(--color-surface-app);
     color: var(--color-ink);
+    /* Phase 10: theme switches fade gently rather than flash. */
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   /* Numerals always tabular — currency columns line up by digit. */

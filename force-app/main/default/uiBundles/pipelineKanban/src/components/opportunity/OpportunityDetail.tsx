@@ -71,7 +71,7 @@ function OpportunitySection({
         <dt className="text-ink-muted">Owner</dt>
         <dd className="flex items-center gap-2 text-ink">
           <span
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#d8d4c8] font-mono text-[10px]"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-avatar-edge font-mono text-[10px]"
             aria-hidden
           >
             {initials(Owner.Name) || '?'}

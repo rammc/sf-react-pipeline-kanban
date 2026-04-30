@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dateColor } from '../OpportunityCard';
 
-const PAST_DUE = '#a85d3e';
-const APPROACHING = '#1a1a1a';
-const FUTURE = '#7a7770';
-const ARCHIVED = '#8a8780';
+// Phase 10: dateColor returns CSS-var strings so the past-due tone
+// follows the warning token across themes (terracotta in light,
+// amber in retro). The semantic name is what's asserted, not the hue.
+const PAST_DUE = 'var(--accent-warning)';
+const APPROACHING = 'var(--ink)';
+const FUTURE = 'var(--ink-muted)';
+const ARCHIVED = 'var(--ink-archived-muted)';
 
 const FIXED_NOW = new Date('2026-04-29T10:00:00Z');
 

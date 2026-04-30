@@ -28,13 +28,18 @@ const MONTH_LABELS = [
 // Six absolute color steps — never normalised against the maximum.
 // Same day stays the same colour whether you're looking at an
 // owner-filtered set or the full pipeline.
+//
+// Phase 10: returns a CSS variable string so the ramp swaps with the
+// theme. Each step is named by its semantic position in the ramp;
+// the actual hue resolves from --heatmap-step-N declared on :root /
+// [data-theme=...] in global.css.
 function colorForCount(n: number): string {
-  if (n <= 0) return '#f5f3ec';
-  if (n === 1) return '#e8e2d2';
-  if (n === 2) return '#d8c8a8';
-  if (n === 3) return '#c4a878';
-  if (n === 4) return '#b8854a';
-  return '#a85d3e';
+  if (n <= 0) return 'var(--heatmap-step-0)';
+  if (n === 1) return 'var(--heatmap-step-1)';
+  if (n === 2) return 'var(--heatmap-step-2)';
+  if (n === 3) return 'var(--heatmap-step-3)';
+  if (n === 4) return 'var(--heatmap-step-4)';
+  return 'var(--heatmap-step-5)';
 }
 
 interface HoverState {
@@ -141,7 +146,7 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
             fontSize={9}
             fontFamily="Geist Mono, ui-monospace, monospace"
             letterSpacing="1"
-            fill="#7a7770"
+            fill="var(--ink-muted)"
           >
             {label}
           </text>
@@ -157,7 +162,7 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
                   y={WEEKDAY_LABEL_H + weekIdx * (CELL_H + GAP) + CELL_H - 4}
                   fontSize={9}
                   fontFamily="Geist Mono, ui-monospace, monospace"
-                  fill="#7a7770"
+                  fill="var(--ink-muted)"
                 >
                   {MONTH_LABELS[firstOfMonthInWeek.getMonth()]}
                 </text>
@@ -179,7 +184,7 @@ export function CloseDateHeatmap({ opportunities }: CloseDateHeatmapProps) {
                     rx={RADIUS}
                     ry={RADIUS}
                     fill={colorForCount(count)}
-                    stroke={isSelected || isHovered ? '#1a1a1a' : 'transparent'}
+                    stroke={isSelected || isHovered ? 'var(--ink)' : 'transparent'}
                     strokeWidth={1.5}
                     style={{ cursor: 'pointer', transition: 'stroke 120ms ease-out' }}
                     onClick={() => onCellClick(day)}

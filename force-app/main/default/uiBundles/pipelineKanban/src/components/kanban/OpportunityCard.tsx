@@ -15,10 +15,17 @@ export interface OpportunityCardProps {
 }
 
 const APPROACHING_WINDOW_DAYS = 14;
-const ARCHIVED_DATE = '#8a8780';
-const PAST_DUE = '#a85d3e'; // same as Negotiation accent — intentional
-const APPROACHING = '#1a1a1a';
-const FUTURE = '#7a7770';
+
+// Phase 10: date colours reference theme tokens, not raw hex.
+// `--accent-warning` is deliberately a separate token from
+// `--accent-stage-negotiation`: in Light Mode they share #a85d3e, but
+// in Retro the stage accent shifts to red phosphor while the warning
+// stays amber. Past-due dates should track the warning semantic, not
+// the Negotiation stage identity.
+const ARCHIVED_DATE = 'var(--ink-archived-muted)';
+const PAST_DUE = 'var(--accent-warning)';
+const APPROACHING = 'var(--ink)';
+const FUTURE = 'var(--ink-muted)';
 
 /**
  * Three-tier date colour for open-stage cards; closed-stage cards
@@ -64,9 +71,11 @@ export function OpportunityCard({
 
   // Tonal split — closed stages render with reduced weight so the
   // active workspace dominates. Single conditional avoids scatter.
-  const surfaceClass = isArchived ? 'bg-[#f3f1e9]' : 'bg-surface-card';
-  const textClass = isArchived ? 'text-[#3a3a3a]' : 'text-ink';
-  const ownerToneClass = isArchived ? 'text-[#8a8780]' : 'text-ink-muted';
+  // Phase 10: hex literals replaced with theme tokens so the split
+  // survives Dark and Retro modes intact.
+  const surfaceClass = isArchived ? 'bg-surface-archived' : 'bg-surface-card';
+  const textClass = isArchived ? 'text-ink-archived' : 'text-ink';
+  const ownerToneClass = isArchived ? 'text-ink-archived-muted' : 'text-ink-muted';
 
   const borderClasses = overlay
     ? 'border-ink shadow-md'
@@ -83,7 +92,7 @@ export function OpportunityCard({
       <span
         title={Owner.Name}
         aria-label={`Owner ${Owner.Name}`}
-        className={`pointer-events-none absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border border-[#d8d4c8] bg-transparent font-mono text-[10px] ${textClass}`}
+        className={`pointer-events-none absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full border border-avatar-edge bg-transparent font-mono text-[10px] ${textClass}`}
       >
         {initials(Owner.Name) || '?'}
       </span>

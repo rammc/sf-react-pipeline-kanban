@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router';
 import { getAllRoutes } from './router-utils';
 import { useState } from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import { ThemeSwitcher } from '@/components/theme/ThemeSwitcher';
 
 export default function AppLayout() {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,11 +35,13 @@ export default function AppLayout() {
             <Link to="/" className="text-[18px] font-medium text-ink">
               Pipeline Kanban
             </Link>
-            <button
-              onClick={toggleMenu}
-              className="p-2 text-ink hover:bg-card-edge/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30"
-              aria-label="Toggle menu"
-            >
+            <div className="flex items-center gap-3">
+              <ThemeSwitcher />
+              <button
+                onClick={toggleMenu}
+                className="p-2 text-ink hover:bg-card-edge/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30"
+                aria-label="Toggle menu"
+              >
               <div className="w-6 h-6 flex flex-col justify-center space-y-1.5">
                 <span
                   className={`block h-0.5 w-6 bg-current transition-all ${
@@ -55,6 +58,7 @@ export default function AppLayout() {
                 />
               </div>
             </button>
+            </div>
           </div>
           {isOpen && (
             <div className="pb-4">
