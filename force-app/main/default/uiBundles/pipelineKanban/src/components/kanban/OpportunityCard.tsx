@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { startOfDay } from 'date-fns';
 import { stageMeta, type StageCategory } from '@/lib/stageMeta';
 import type { Opportunity } from '@/types/opportunity';
@@ -107,9 +108,19 @@ export function OpportunityCard({
           </button>
         )}
 
-        <p className={`mt-[2px] text-[14px] font-medium leading-tight pr-8 ${textClass}`}>
+        {/* Name links to the detail route. `stopPropagation` on
+            pointer-down prevents dnd-kit from picking up the click as
+            the start of a drag. Same pattern as the Amount-edit
+            button above. The Link wraps the text only, not the
+            card's padding, so most of the card's surface stays
+            draggable. */}
+        <Link
+          to={`/opportunity/${Id}`}
+          onPointerDown={e => e.stopPropagation()}
+          className={`mt-[2px] block text-[14px] font-medium leading-tight pr-8 hover:underline ${textClass}`}
+        >
           {Name}
-        </p>
+        </Link>
 
         <p className="mt-[6px] text-[11px]">
           <span className="font-mono" style={{ color: dateTone }}>

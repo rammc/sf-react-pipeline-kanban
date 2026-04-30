@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import type { Opportunity, Stage } from '@/types/opportunity';
@@ -67,7 +68,7 @@ describe('KanbanBoard', () => {
   });
 
   it('renders one column per stage with correct counts and totals', () => {
-    render(<KanbanBoard />);
+    render(<MemoryRouter><KanbanBoard /></MemoryRouter>);
 
     const prospecting = screen.getByRole('region', {
       name: /Stage column Prospecting/,
@@ -81,7 +82,7 @@ describe('KanbanBoard', () => {
   });
 
   it('places each opportunity card under its stage column', () => {
-    render(<KanbanBoard />);
+    render(<MemoryRouter><KanbanBoard /></MemoryRouter>);
 
     const prospecting = screen.getByRole('region', {
       name: /Stage column Prospecting/,
@@ -94,7 +95,7 @@ describe('KanbanBoard', () => {
   });
 
   it('renders the forecast sidebar with weighted total', () => {
-    render(<KanbanBoard />);
+    render(<MemoryRouter><KanbanBoard /></MemoryRouter>);
 
     // Total pipeline = 10k + 25k + 50k = 85k
     expect(screen.getByText('$85,000')).toBeInTheDocument();

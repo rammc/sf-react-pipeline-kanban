@@ -57,6 +57,10 @@ flowchart LR
   linkStyle 3,4 stroke:#7a7770,stroke-width:1.5px,stroke-dasharray:4 3
 ```
 
+## Routes
+
+The app has two routes. `/` renders the Kanban board; `/opportunity/:id` renders the detail view. Filter state (selected owners, close-date range) lives in zustand at module scope, so it persists when the user navigates between routes — no extra wiring. Route state (the opportunity id) lives in the URL where it belongs, never in zustand. The detail view fetches its own data via `useOpportunityDetail`; KanbanBoard unmounts on detail-navigation and refetches on return, which is the correct behaviour after a possibly-long detour. Click-handling on the card name uses `<Link>` plus `onPointerDown` stop-propagation so dnd-kit can't pick up the click as the start of a drag.
+
 ## Data flow — initial load
 
 How the board hydrates from a fresh page load.

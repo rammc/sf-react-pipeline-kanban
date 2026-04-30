@@ -139,12 +139,12 @@ should be one PR.
 
 | Exercise                                                                           | Touches                                                    | Skill                                      |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------ |
-| Add a `/opportunity/:id` route with a detail view                                  | `src/routes.tsx`, `react-router`, a new query              | Routing + dynamic data fetch               |
 | Move the Amount mutation pattern into one `useUpdateOpportunity({ partial })` hook | `src/hooks/`, both card + drag-end paths                   | Refactoring without changing behaviour     |
 | Persist filter state to URL search params                                          | `filterStore.ts`, `react-router` `useSearchParams`         | State sync between store and URL           |
 | Add a "Closed Won this quarter" KPI card to ForecastSidebar                        | `ForecastSidebar.tsx`                                      | Derived state via `useMemo`                |
 | Replace hand-written types with codegen                                            | `codegen.yml`, `tsconfig.json`, all `src/types/` consumers | Build pipelines                            |
 | Add server-side filtering (Owner, CloseDate) via GraphQL `where:`                  | `OPPORTUNITIES_QUERY`, `useOpportunities`, `FilterBar`     | Push filtering across the network boundary |
+| Extend the detail-view activity query to include Events alongside Tasks            | `OPPORTUNITY_ACTIVITY_QUERY`, `useOpportunityDetail`       | Polymorphic GraphQL queries + client merge |
 
 ## What to read next
 
