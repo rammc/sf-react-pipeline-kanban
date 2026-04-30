@@ -48,9 +48,11 @@ A browser tab opens against the proxy URL. GraphQL requests flow through the org
 
 ### Seed data
 
-`scripts/seed-opportunities.apex` reads the active `Opportunity.StageName` picklist from the running org and distributes 30 demo records across whatever stages it finds. Works on a vanilla scratch org *and* on customised sandboxes without modification.
+`scripts/seed-opportunities.apex` reads the active `Opportunity.StageName` picklist from the running org and distributes 30 demo records across whatever stages it finds. Works on a vanilla scratch org _and_ on customised sandboxes without modification.
 
 `useStages()` reads the same picklist client-side, so the board always reflects what the org actually has. Forecast probabilities (Phase 5) are mapped to common stage names — custom stages without a known mapping default to 0.
+
+To verify the seed loaded, run the SOQL in `scripts/soql/seed-verification.soql` (should return 30 rows ordered by stage and close date).
 
 ### App Launcher integration — deferred to Phase 6
 
@@ -58,7 +60,19 @@ The verified Multi-Framework metadata pattern for placing a UIBundle into a Cust
 
 ## Known Beta Template Issues
 
-These are quirks of `@salesforce/ui-bundle-template-base-react-app@1.132.0` that this repo has worked around. Documented so future readers can verify whether they still apply when running the bootstrap themselves.
+These are quirks of the Multi-Framework Beta template and runtime that this repo has worked around. Documented so future readers can verify whether they still apply when running the bootstrap themselves.
+
+### Versions this repo was built against
+
+| Package                                         | Version | Role                                                        |
+| ----------------------------------------------- | ------- | ----------------------------------------------------------- |
+| Salesforce CLI (`sf`)                           | 2.118+  | Base CLI                                                    |
+| `@salesforce/plugin-ui-bundle-dev`              | 1.2.2   | The `sf ui-bundle dev` command                              |
+| `@salesforce/ui-bundle-template-base-react-app` | 1.132.0 | Scaffolding template                                        |
+| `@salesforce/ui-bundle`                         | 1.132.0 | Runtime + dev-server proxy (the package the patches target) |
+| Node.js                                         | 22.x    | UI bundle build/test                                        |
+
+If you hit issues that look like the ones below, your first check is whether your versions match. If they don't, the patches and config tweaks may not apply cleanly.
 
 ### 1. Broken monorepo path mappings in `tsconfig.json`
 
@@ -113,3 +127,17 @@ No default org found. Run "sf org login" to authenticate an org...
 ```
 
 This is harmless for unit tests — they don't hit the org. Suppress by setting a default org or filter the line in CI logs.
+
+### 6. `@salesforce/ui-bundle` runtime patches (applied via `patch-package`)
+
+The `force-app/main/default/uiBundles/pipelineKanban/patches/` directory holds a single patch file, applied automatically on every `npm install` via the `postinstall` hook:
+
+#### `@salesforce+ui-bundle+1.132.0.patch`
+
+Three independent fixes against `dist/proxy/handler.js` and `dist/proxy/routing.js` in `@salesforce/ui-bundle@1.132.0`. Each one was diagnosed during Phase 3's verify pass against a live sandbox; each one blocks the local dev server from reaching the org until applied.
+
+- **`routing.js` — basePath normalisation.** The Vite plugin sets `basePath = "/"` in dev mode, and the proxy's regex builds `^//services/data/v\d{2}\.\d/(...)` from that — a literal double-slash that never matches the single-slash paths the SDK actually requests. The patch normalises `"/"` → `""` at the top of `matchRoute()`, so the regex becomes `^/services/data/v\d{2}\.\d/(...)` and the API match works.
+- **`handler.js` — drop `Cookie: sid=<oauth-token>`.** `handleSalesforceApi` was setting both a session cookie _and_ a Bearer header with the same OAuth access token. `sfdcedge` on sandboxes rejected the request with HTTP 400 `INVALID_ACCESS_TOKEN` — OAuth tokens aren't valid as `sid` cookies. The patch removes the cookie line; Bearer alone authenticates correctly.
+- **`handler.js` — use `rawInstanceUrl`, not `instanceUrl`.** `getOrgInfo()` rewrites `instanceUrl` from `*.my.salesforce.com` to `*.lightning.force.com` (correct for Lightning Frontdoor URLs, wrong for `/services/data/*`). API calls to the Lightning domain return empty bodies on sandboxes. The patch falls back to `rawInstanceUrl` first, which is the original `*.my.salesforce.com` host where the API actually lives.
+
+If `npm install` reports `patch-package` failing to apply this patch, your installed `@salesforce/ui-bundle` is no longer at `1.132.0`. Verify with `npm ls @salesforce/ui-bundle` from inside the UI bundle directory and refresh the patch (`npx patch-package @salesforce/ui-bundle`) once you've confirmed the upstream still has the same bugs.

@@ -32,11 +32,12 @@ overhead first.
 - Org default language must be English.
 - The CLI plugin `@salesforce/plugin-ui-bundle-dev` is required for
   the local dev server.
-- Three plugin bugs in `@salesforce/ui-bundle@1.132.0` are patched via
-  `patch-package`. See [`docs/SETUP.md`](docs/SETUP.md#known-beta-template-issues)
-  for the diff and the symptoms each one fixes — none survive once the
-  beta exits, but as long as you're on a current beta release expect
-  to need them.
+- A handful of beta-template quirks are worked around in this repo —
+  tsconfig path mappings, a duplicate Vitest config, and (where
+  applicable) `patch-package` patches against `@salesforce/ui-bundle`.
+  See [`docs/SETUP.md`](docs/SETUP.md#known-beta-template-issues)
+  for the symptoms, the fix, and the package versions this repo was
+  built against. Expect to revisit them as the beta evolves.
 - App Launcher integration via UIBundle-pointing tabs and
   CustomApplications is **not** in this repo. The metadata schemas
   haven't stabilised in the beta. The primary run path is the local
@@ -49,13 +50,23 @@ permission set deploy, seed data, and the dev-server flow. TL;DR:
 
 ```bash
 git clone https://github.com/rammc/sf-react-pipeline-kanban.git
-cd sf-react-pipeline-kanban/force-app/main/default/uiBundles/pipelineKanban
-npm install
-sf config set target-org <your-sandbox-alias>
-cd ../../../../..  # back to repo root
-sf apex run --file scripts/seed-opportunities.apex
+cd sf-react-pipeline-kanban
+
+# 1. Install UI bundle dependencies
 cd force-app/main/default/uiBundles/pipelineKanban
-sf ui-bundle dev -n pipelineKanban -b
+npm install
+cd ../../../../..
+
+# 2. Deploy and assign the permission set
+sf project deploy start --source-dir force-app/main/default/permissionsets --target-org <alias>
+sf org assign permset --name PipelineKanban_App --target-org <alias>
+
+# 3. Seed demo data (idempotent — safe to re-run)
+sf apex run --file scripts/seed-opportunities.apex --target-org <alias>
+
+# 4. Start the dev server
+cd force-app/main/default/uiBundles/pipelineKanban
+sf ui-bundle dev --target-org <alias> --name pipelineKanban --open
 ```
 
 Browser opens; six (or however-many-your-org-has) stage columns of
@@ -121,30 +132,30 @@ The git log is the table of contents. Read the commits in order;
 each one corresponds to one phase of the build, ends in a runnable
 state, and only adds what that phase teaches:
 
-| Phase | Commit subject | What's introduced |
-|---|---|---|
-| 1 | `chore: scaffold Multi-Framework UIBundle …` | Project bootstrap, deps, template, no UI logic |
-| 2 | `feat: add Data SDK client, GraphQL queries, and typed hooks` | `createDataSDK`, GraphQL strings, three minimal hooks, six unit tests |
-| 3 | `feat: render static Kanban from Salesforce data + verify against live org` | Static board with real data, schema verified against a live sandbox, three plugin bugs found and patched |
-| 4 | `feat: drag-and-drop stage updates with optimistic UI` | dnd-kit + `DragOverlay`, optimistic state in `KanbanBoard`, sonner toast on rollback |
-| 5 | `feat: filters, weighted forecast, and inline amount edit` | zustand filter store, `ForecastSidebar`, `react-hook-form`-driven inline edit |
-| 6 | `docs: README, architecture notes, and teaching guide` | Tests, error boundary, CI, the full doc set |
+| Phase | Commit subject                                                              | What's introduced                                                                                        |
+| ----- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1     | `chore: scaffold Multi-Framework UIBundle …`                                | Project bootstrap, deps, template, no UI logic                                                           |
+| 2     | `feat: add Data SDK client, GraphQL queries, and typed hooks`               | `createDataSDK`, GraphQL strings, three minimal hooks, six unit tests                                    |
+| 3     | `feat: render static Kanban from Salesforce data + verify against live org` | Static board with real data, schema verified against a live sandbox, three plugin bugs found and patched |
+| 4     | `feat: drag-and-drop stage updates with optimistic UI`                      | dnd-kit + `DragOverlay`, optimistic state in `KanbanBoard`, sonner toast on rollback                     |
+| 5     | `feat: filters, weighted forecast, and inline amount edit`                  | zustand filter store, `ForecastSidebar`, `react-hook-form`-driven inline edit                            |
+| 6     | `docs: README, architecture notes, and teaching guide`                      | Tests, error boundary, CI, the full doc set                                                              |
 
 `git log --oneline` and `git show <hash>` will tell you exactly what
 each step touched.
 
 ## What's deliberately **not** here
 
-| Excluded | Why |
-|---|---|
-| Apex triggers, validation rules, custom objects | Out of teaching scope; everything happens through the GraphQL UI API. |
-| Authentication code | The SDK + dev-server proxy handle it. |
-| TanStack Query / Redux / Apollo Client | Each adds learning surface without showing a Multi-Framework-specific concept. The hooks here are plain `useState` + `useEffect` so the data flow is observable. |
-| Lightning App Builder integration | Not supported in beta. |
-| i18n / l10n | Beta requires English default language. |
-| Mobile-specific layouts | Out of scope for an example. |
-| Production CI/CD pipelines | The `.github/workflows/ci.yml` here runs lint + test; no deploy. |
-| Agentforce, Marketing Cloud, Service Cloud features | Different teaching repos. |
+| Excluded                                            | Why                                                                                                                                                              |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Apex triggers, validation rules, custom objects     | Out of teaching scope; everything happens through the GraphQL UI API.                                                                                            |
+| Authentication code                                 | The SDK + dev-server proxy handle it.                                                                                                                            |
+| TanStack Query / Redux / Apollo Client              | Each adds learning surface without showing a Multi-Framework-specific concept. The hooks here are plain `useState` + `useEffect` so the data flow is observable. |
+| Lightning App Builder integration                   | Not supported in beta.                                                                                                                                           |
+| i18n / l10n                                         | Beta requires English default language.                                                                                                                          |
+| Mobile-specific layouts                             | Out of scope for an example.                                                                                                                                     |
+| Production CI/CD pipelines                          | The `.github/workflows/ci.yml` here runs lint + test; no deploy.                                                                                                 |
+| Agentforce, Marketing Cloud, Service Cloud features | Different teaching repos.                                                                                                                                        |
 
 ## Further reading
 

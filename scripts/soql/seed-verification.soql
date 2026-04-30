@@ -1,0 +1,10 @@
+// Verify the demo seed loaded correctly.
+// Run from VS Code: select all + "SFDX: Execute SOQL Query with Currently Selected Text".
+// Or from the CLI:
+//   sf data query --file scripts/soql/seed-verification.soql --target-org <alias>
+
+SELECT Id, Name, StageName, Amount, CloseDate, Owner.Name
+FROM Opportunity
+WHERE Description = 'Seeded by Pipeline Kanban demo'
+ORDER BY StageName, CloseDate
+LIMIT 200
