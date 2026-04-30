@@ -290,7 +290,11 @@ column into view and flashes its header. A chart inside a workflow
 app should do this by default — if it can't be acted on, it's
 decoration. The design rule that follows: every visual element on the
 board either changes server state, navigates the user, or makes the
-data legible. None of them are there to look like a dashboard.
+data legible. None of them are there to look like a dashboard. The
+close-date heatmap (Phase 8) follows the same rule — clicking a cell
+sets the close-date filter rather than opening a detail panel — and
+intentionally consumes the _owner-filtered_ (not date-filtered) set
+so it never collapses its own context after a click.
 
 ## What this repo intentionally does not show
 

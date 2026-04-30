@@ -18,6 +18,7 @@ import { useUpdateAmount } from '@/hooks/useUpdateAmount';
 import { useFilterStore } from '@/store/filterStore';
 import { stageMeta } from '@/lib/stageMeta';
 import type { Opportunity, Stage } from '@/types/opportunity';
+import { CloseDateHeatmap } from '@/components/heatmap/CloseDateHeatmap';
 import { BoardSkeleton } from './BoardSkeleton';
 import { EmptyState } from './EmptyState';
 import { FilterBar } from './FilterBar';
@@ -97,14 +98,24 @@ export function KanbanBoard() {
     }, 1500);
   }, []);
 
+  // Two-stage filter so the heatmap (which itself drives the
+  // close-date filter) reads only the owner-filtered set. Without
+  // this split, clicking a heatmap cell would shrink its own input
+  // to a single day and the heatmap would visually collapse — a
+  // navigation surface that destroys its own context after one click.
+  const ownerFilteredOpps = useMemo(() => {
+    if (ownerIds.size === 0) return localOpps;
+    return localOpps.filter(o => ownerIds.has(o.Owner.Id));
+  }, [localOpps, ownerIds]);
+
   const visibleOpps = useMemo(() => {
-    return localOpps.filter(o => {
-      if (ownerIds.size > 0 && !ownerIds.has(o.Owner.Id)) return false;
+    if (!closeDateFrom && !closeDateTo) return ownerFilteredOpps;
+    return ownerFilteredOpps.filter(o => {
       if (closeDateFrom && o.CloseDate < closeDateFrom) return false;
       if (closeDateTo && o.CloseDate > closeDateTo) return false;
       return true;
     });
-  }, [localOpps, ownerIds, closeDateFrom, closeDateTo]);
+  }, [ownerFilteredOpps, closeDateFrom, closeDateTo]);
 
   const grouped = useMemo(() => groupByStage(visibleOpps), [visibleOpps]);
   const boundaryIndex = useMemo(() => findOpenClosedBoundary(stages), [stages]);
@@ -196,6 +207,7 @@ export function KanbanBoard() {
           consuming the vertical viewport. */}
       <div className="flex h-[calc(100vh-4rem)] flex-col">
         <FilterBar opportunities={localOpps} />
+        <CloseDateHeatmap opportunities={ownerFilteredOpps} />
         <ForecastBar
           opportunities={visibleOpps}
           stages={stages}

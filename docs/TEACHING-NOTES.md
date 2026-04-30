@@ -97,6 +97,28 @@ worth re-checking if the chart count grows beyond two or three. If
 the bundle ever needs to shrink, dynamic-import the funnel — it's
 not used on first paint until the data loads.
 
+### Custom SVG (Phase 8) — when the library gets in the way
+
+Phase 7 shows when a chart library helps. Phase 8 shows when it gets
+in the way. The close-date heatmap is a 7×12 grid of `<rect>`
+elements with six fill colours; about 30 lines of JSX over the
+day-bucket helper. Comparing alternatives:
+
+- **Recharts**: no native heatmap. You can fake one with a scatter
+  plot, but the layout fights the cell-grid semantics and the
+  tooltip API doesn't fit a per-day "click to filter" pattern.
+- **Visx (`@visx/heatmap`)**: bundle weight for a chart that's
+  structurally simpler than what the library is built to handle.
+- **`react-calendar-heatmap`**: opinionated about a GitHub-style
+  layout; resists the close-date-only, forward-looking semantics
+  needed here.
+
+Custom SVG is the right call when a chart is small, specific, and
+can't be sourced cleanly. Twelve `<rect>` elements per row, six
+classes for colour steps, an HTML tooltip on top, done. The
+discipline rule: recognise when a library helps and when it gets in
+the way. Phase 7 and Phase 8 demonstrate both halves.
+
 ### What's not here, and why
 
 - **TanStack Query / SWR / Apollo Client**: hides the data flow.
