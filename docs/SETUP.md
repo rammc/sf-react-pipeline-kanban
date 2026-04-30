@@ -48,15 +48,17 @@ A browser tab opens against the proxy URL. GraphQL requests flow through the org
 
 ### Seed data
 
-`scripts/seed-opportunities.apex` reads the active `Opportunity.StageName` picklist from the running org and distributes 30 demo records across whatever stages it finds. Works on a vanilla scratch org _and_ on customised sandboxes without modification.
+`scripts/seed-opportunities.apex` reads the active `Opportunity.StageName` picklist from the running org and distributes 30 demo Opportunities across whatever stages it finds, plus 2-4 completed `Task` records per opportunity (~90 Tasks total) so the detail-view activity section renders with realistic content. Works on a vanilla scratch org _and_ on customised sandboxes without modification.
 
 `useStages()` reads the same picklist client-side, so the board always reflects what the org actually has. Forecast probabilities (Phase 5) are mapped to common stage names — custom stages without a known mapping default to 0.
 
+The seed is idempotent: re-running it deletes the previous demo data (Tasks first, then Opportunities, then the anchor Account) before inserting fresh records. Safe to re-run any time.
+
 To verify the seed loaded, run the SOQL in `scripts/soql/seed-verification.soql` (should return 30 rows ordered by stage and close date).
 
-### App Launcher integration — deferred to Phase 6
+### App Launcher integration — still deferred
 
-The verified Multi-Framework metadata pattern for placing a UIBundle into a CustomTab + CustomApplication has not yet stabilised in the open beta. This repo therefore ships the dev-server flow above as the primary run path. App Launcher integration is tracked for Phase 6 (or later, depending on how the beta evolves) — once an authoritative pattern surfaces, we add a `tabs/` and `applications/` directory and document the deploy step.
+The verified Multi-Framework metadata pattern for placing a UIBundle into a CustomTab + CustomApplication has not yet stabilised in the open beta. This repo therefore ships the dev-server flow above as the primary run path. App Launcher integration is tracked for a future phase, depending on how the beta evolves — once an authoritative pattern surfaces, we add a `tabs/` and `applications/` directory and document the deploy step.
 
 ## Known Beta Template Issues
 

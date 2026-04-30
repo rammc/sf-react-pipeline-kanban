@@ -97,10 +97,11 @@ flowchart LR
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) zooms into the browser
 tier with its own flowchart, adds four sequence diagrams (initial
 load, drag-and-drop with rollback, inline edit, filter / forecast),
+documents the two-route structure (board + opportunity detail),
 covers the visualization patterns from Phases 7 and 8 ("Visualisation
 as workflow navigation"), and the load-bearing design decisions:
 manual types vs codegen, client-side filtering, where the optimistic
-update lives, why zustand for one piece of state.
+update lives, why zustand for filter and theme state.
 
 ## Walking through the code
 
@@ -108,16 +109,18 @@ The git log is the table of contents. Read the commits in order;
 each one corresponds to one phase of the build, ends in a runnable
 state, and only adds what that phase teaches:
 
-| Phase | Commit subject                                                              | What's introduced                                                                                        |
-| ----- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1     | `chore: scaffold Multi-Framework UIBundle …`                                | Project bootstrap, deps, template, no UI logic                                                           |
-| 2     | `feat: add Data SDK client, GraphQL queries, and typed hooks`               | `createDataSDK`, GraphQL strings, three minimal hooks, six unit tests                                    |
-| 3     | `feat: render static Kanban from Salesforce data + verify against live org` | Static board with real data, schema verified against a live sandbox, three plugin bugs found and patched |
-| 4     | `feat: drag-and-drop stage updates with optimistic UI`                      | dnd-kit + `DragOverlay`, optimistic state in `KanbanBoard`, sonner toast on rollback                     |
-| 5     | `feat: filters, weighted forecast, and inline amount edit`                  | zustand filter store, `ForecastSidebar`, `react-hook-form`-driven inline edit                            |
-| 6     | `docs: README, architecture notes, and teaching guide`                      | Tests, error boundary, CI, the full doc set                                                              |
-| 7     | `feat: stage funnel chart in forecast bar`                                  | Recharts integration, click-to-filter funnel as embedded visualisation                                   |
-| 8     | `feat: close-date heatmap calendar with click-to-filter`                    | Custom SVG heatmap (no chart library), owner-aware filtering, collapsible. Contrast pattern to Phase 7   |
+| Phase | Commit subject                                                              | What's introduced                                                                                               |
+| ----- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1     | `chore: scaffold Multi-Framework UIBundle …`                                | Project bootstrap, deps, template, no UI logic                                                                  |
+| 2     | `feat: add Data SDK client, GraphQL queries, and typed hooks`               | `createDataSDK`, GraphQL strings, three minimal hooks, six unit tests                                           |
+| 3     | `feat: render static Kanban from Salesforce data + verify against live org` | Static board with real data, schema verified against a live sandbox, three plugin bugs found and patched        |
+| 4     | `feat: drag-and-drop stage updates with optimistic UI`                      | dnd-kit + `DragOverlay`, optimistic state in `KanbanBoard`, sonner toast on rollback                            |
+| 5     | `feat: filters, weighted forecast, and inline amount edit`                  | zustand filter store, `ForecastSidebar`, `react-hook-form`-driven inline edit                                   |
+| 6     | `docs: README, architecture notes, and teaching guide`                      | Tests, error boundary, CI, the full doc set                                                                     |
+| 7     | `feat: stage funnel chart in forecast bar`                                  | Recharts integration, click-to-filter funnel as embedded visualisation                                          |
+| 8     | `feat: close-date heatmap calendar with click-to-filter`                    | Custom SVG heatmap (no chart library), owner-aware filtering, collapsible. Contrast pattern to Phase 7          |
+| 9     | `feat: opportunity detail view at /opportunity/:id`                         | Second route, polymorphic activity query, deep linking, filter state preserved across navigation                |
+| 10    | `feat: theme switcher with light, dark, and retro terminal modes`           | CSS-variable token architecture, three themes, no theming library. Retro mode as the architecture's stress test |
 
 `git log --oneline` and `git show <hash>` will tell you exactly what
 each step touched.
